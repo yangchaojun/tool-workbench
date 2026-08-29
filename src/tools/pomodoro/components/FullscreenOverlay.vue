@@ -7,6 +7,7 @@ import { useWakeLock } from '@/shared/composables/useWakeLock'
 
 import { phaseMeta, usePomodoroStore } from '../stores/pomodoro'
 import TimerRing from './TimerRing.vue'
+import FlipClock from './FlipClock.vue'
 
 // 全屏专注层：同一状态机的另一种呈现。刻意不用 naive 组件——
 // 其样式未分层会压过工具类，且主题跟随全局会与强制深色沉浸冲突；
@@ -158,7 +159,8 @@ onBeforeUnmount(() => {
           aria-label="切换计时"
           @click="toggleRun"
         >
-          <TimerRing large />
+          <FlipClock v-if="store.settings.clockStyle === 'flip'" large />
+          <TimerRing v-else large />
         </button>
 
         <span

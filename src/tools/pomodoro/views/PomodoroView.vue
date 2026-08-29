@@ -5,6 +5,7 @@ import { ExpandOutline, SettingsOutline } from '@vicons/ionicons5'
 
 import { usePomodoroStore, phaseMeta } from '../stores/pomodoro'
 import TimerRing from '../components/TimerRing.vue'
+import FlipClock from '../components/FlipClock.vue'
 import TodayStats from '../components/TodayStats.vue'
 import TaskList from '../components/TaskList.vue'
 import SettingsDrawer from '../components/SettingsDrawer.vue'
@@ -79,7 +80,8 @@ function onMainClick() {
           </button>
         </div>
 
-        <TimerRing />
+        <FlipClock v-if="store.settings.clockStyle === 'flip'" />
+        <TimerRing v-else />
 
         <div class="mt-8 flex items-center gap-2">
           <NButton

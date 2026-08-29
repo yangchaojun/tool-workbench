@@ -17,6 +17,8 @@ export const pomodoroSettingsSchema = z.object({
   soundEnabled: z.boolean().default(true),
   notifyEnabled: z.boolean().default(false),
   dailyGoal: z.number().int().min(1).max(24).default(8),
+  /** 时钟动画形态：ring 环形倒计时 / flip 翻页时钟 */
+  clockStyle: z.enum(['ring', 'flip']).default('ring'),
 })
 export type PomodoroSettings = z.output<typeof pomodoroSettingsSchema>
 

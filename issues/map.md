@@ -34,6 +34,7 @@ tool-workbench 可运行：一个以「工具注册契约」为核心的小工�
 - [平台外壳与首页工具墙](issues/tickets/007-shell-ui.md) — 导航完全由注册表驱动；暗色持久化 `tw:theme` + 首帧防闪白脚本；未知工具/未知路由双兜底；移动端顶栏 + 抽屉。
 - [端到端验证与交付](issues/tickets/008-verify-e2e.md) — 类型检查与构建零错误；浏览器实测（计时推进/暂停/跳过/持久化/暗色/404/375px 响应式）通过并双主题截图比对；环境限制（IAB 合成按键不可靠）已记录。
 - [番茄钟全屏专注模式](issues/tickets/009-fullscreen-focus-mode.md) — 沉浸层 + Fullscreen API 增强（自动降级）；Teleport 覆盖层不用 naive 组件，根挂 `.dark` 强制深色沉浸；点击环面/空格切换、Wake Lock 防息屏；入口经用户反馈从计时卡角落移至页头动作组（与设置成组）。
+- [番茄钟翻页时钟动画模式](issues/tickets/010-flip-clock-mode.md) — 第二种时钟动画（经两轮 grilling 定案）：split-flap 每位独立翻转，全局生效（主视图 + 全屏层），设置抽屉 NRadioGroup 持久化 `clockStyle`；阶段色收敛为冒号点 + 状态标签，卡片配色走主题 token；动效最终采用用户指定参考（codepen wen-yan/ogjMmdr）的连续翻叶方案——前后两卡、两叶共用一条 0.6s ease-in-out 镜像旋转（0→180 / 180→0 + backface 隐藏），角速度在 90° 交接连续；注意 reduced-motion 全局规则不清 animation-delay 的陷阱。
 
 ## Not yet specified
 

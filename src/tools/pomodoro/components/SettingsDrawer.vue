@@ -1,6 +1,15 @@
 <script setup lang="ts">
 import { ref } from 'vue'
-import { NButton, NDrawer, NDrawerContent, NInputNumber, NSwitch, useMessage } from 'naive-ui'
+import {
+  NButton,
+  NDrawer,
+  NDrawerContent,
+  NInputNumber,
+  NRadioButton,
+  NRadioGroup,
+  NSwitch,
+  useMessage,
+} from 'naive-ui'
 
 import { usePomodoroStore } from '../stores/pomodoro'
 import { requestNotifyPermission } from '../utils/notify'
@@ -107,6 +116,14 @@ function restoreDefaults() {
         </div>
 
         <div class="my-2 h-px bg-line/60" role="separator" />
+
+        <div class="flex items-center justify-between gap-4 py-2">
+          <span class="text-sm">时钟动画</span>
+          <NRadioGroup v-model:value="store.settings.clockStyle" size="small">
+            <NRadioButton value="ring">环形时钟</NRadioButton>
+            <NRadioButton value="flip">翻页时钟</NRadioButton>
+          </NRadioGroup>
+        </div>
 
         <div class="flex items-center justify-between gap-4 py-2">
           <span class="text-sm">自动开始下一段</span>
