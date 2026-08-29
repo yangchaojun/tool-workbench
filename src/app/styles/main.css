@@ -1,0 +1,71 @@
+@import 'tailwindcss';
+
+/* 暗色模式基于 <html class="dark"> 切换（与 Naive UI darkTheme 同步） */
+@custom-variant dark (&:where(.dark, .dark *));
+
+/*
+ * 设计 tokens —— 来自 design-system/toolworkbench/MASTER.md（ui-ux-pro-max：
+ * Minimalism & Swiss）。语义色在 .dark 下覆盖；Tailwind 工具类运行时引用
+ * CSS 变量，因此换肤只需覆盖变量。
+ */
+@theme {
+  --font-sans:
+    'Inter', -apple-system, BlinkMacSystemFont, 'Segoe UI', 'PingFang SC',
+    'Hiragino Sans GB', 'Microsoft YaHei', 'Noto Sans CJK SC', sans-serif;
+
+  /* 品牌色 */
+  --color-primary: #0d9488;
+  --color-primary-strong: #0f766e;
+  --color-primary-soft: #ccfbf1;
+  --color-accent: #ea580c;
+  --color-accent-soft: #ffedd5;
+
+  /* 语义表面 */
+  --color-surface: #f0fdfa;
+  --color-card: #ffffff;
+  --color-ink: #134e4a;
+  --color-ink-muted: #64748b;
+  --color-line: #99f6e4;
+
+  --radius-card: 1rem;
+  --shadow-card:
+    0 1px 2px rgb(15 60 55 / 0.05), 0 10px 30px rgb(15 60 55 / 0.06);
+}
+
+.dark {
+  --color-primary: #2dd4bf;
+  --color-primary-strong: #5eead4;
+  --color-primary-soft: #134e4a;
+  --color-accent: #fb923c;
+  --color-accent-soft: #431407;
+  --color-surface: #0c161e;
+  --color-card: #122028;
+  --color-ink: #e6edf3;
+  --color-ink-muted: #94a3b8;
+  --color-line: #233644;
+}
+
+@layer base {
+  html {
+    -webkit-font-smoothing: antialiased;
+    text-rendering: optimizeLegibility;
+  }
+
+  body {
+    background-color: var(--color-surface);
+    color: var(--color-ink);
+    font-family: var(--font-sans);
+  }
+}
+
+/* 遵循系统减少动态效果偏好 */
+@media (prefers-reduced-motion: reduce) {
+  *,
+  *::before,
+  *::after {
+    transition-duration: 0.01ms !important;
+    animation-duration: 0.01ms !important;
+    animation-iteration-count: 1 !important;
+    scroll-behavior: auto !important;
+  }
+}
