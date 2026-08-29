@@ -3,6 +3,9 @@ import { computed } from 'vue'
 
 import { usePomodoroStore } from '../stores/pomodoro'
 
+// large 尺寸供全屏专注层使用，随视口缩放
+const props = withDefaults(defineProps<{ large?: boolean }>(), { large: false })
+
 const store = usePomodoroStore()
 
 const CIRCUMFERENCE = 2 * Math.PI * 124
@@ -21,7 +24,11 @@ const progressColor = computed(() =>
 </script>
 
 <template>
-  <div class="relative mx-auto aspect-square w-64 md:w-72" role="timer">
+  <div
+    class="relative mx-auto aspect-square"
+    :class="props.large ? 'w-[min(72vmin,540px)]' : 'w-64 md:w-72'"
+    role="timer"
+  >
     <svg viewBox="0 0 280 280" class="size-full -rotate-90">
       <circle
         cx="140"
@@ -46,7 +53,10 @@ const progressColor = computed(() =>
       />
     </svg>
     <div class="absolute inset-0 flex flex-col items-center justify-center gap-1.5">
-      <span class="text-5xl font-semibold tracking-tight tabular-nums md:text-6xl">
+      <span
+        class="font-semibold tracking-tight tabular-nums"
+        :class="props.large ? 'text-7xl md:text-8xl' : 'text-5xl md:text-6xl'"
+      >
         {{ store.clockText }}
       </span>
       <span class="text-sm text-ink-muted">{{ store.statusLabel }}</span>

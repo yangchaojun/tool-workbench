@@ -1,17 +1,19 @@
 <script setup lang="ts">
 import { computed, ref } from 'vue'
 import { NButton, NIcon } from 'naive-ui'
-import { SettingsOutline } from '@vicons/ionicons5'
+import { ExpandOutline, SettingsOutline } from '@vicons/ionicons5'
 
 import { usePomodoroStore, phaseMeta } from '../stores/pomodoro'
 import TimerRing from '../components/TimerRing.vue'
 import TodayStats from '../components/TodayStats.vue'
 import TaskList from '../components/TaskList.vue'
 import SettingsDrawer from '../components/SettingsDrawer.vue'
+import FullscreenOverlay from '../components/FullscreenOverlay.vue'
 import type { PomodoroPhase } from '../schemas'
 
 const store = usePomodoroStore()
 const showSettings = ref(false)
+const showFullscreen = ref(false)
 
 const phaseKeys = Object.keys(phaseMeta) as PomodoroPhase[]
 
@@ -34,11 +36,18 @@ function onMainClick() {
         <h1 class="text-2xl font-semibold tracking-tight">番茄任务钟</h1>
         <p class="mt-1 text-sm text-ink-muted">专注一个番茄，休息片刻，循环推进。</p>
       </div>
-      <NButton quaternary circle aria-label="打开设置" @click="showSettings = true">
-        <template #icon>
-          <NIcon :size="20"><SettingsOutline /></NIcon>
-        </template>
-      </NButton>
+      <div class="flex shrink-0 items-center gap-1">
+        <NButton quaternary circle aria-label="进入全屏专注" @click="showFullscreen = true">
+          <template #icon>
+            <NIcon :size="20"><ExpandOutline /></NIcon>
+          </template>
+        </NButton>
+        <NButton quaternary circle aria-label="打开设置" @click="showSettings = true">
+          <template #icon>
+            <NIcon :size="20"><SettingsOutline /></NIcon>
+          </template>
+        </NButton>
+      </div>
     </header>
 
     <div class="grid items-start gap-6 lg:grid-cols-[minmax(0,1fr)_340px]">
@@ -112,5 +121,6 @@ function onMainClick() {
     </div>
 
     <SettingsDrawer v-model:show="showSettings" />
+    <FullscreenOverlay v-model:show="showFullscreen" />
   </section>
 </template>

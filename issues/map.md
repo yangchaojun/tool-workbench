@@ -33,6 +33,7 @@ tool-workbench 可运行：一个以「工具注册契约」为核心的小工�
 - [番茄钟界面实现](issues/tickets/006-pomodoro-ui.md) — 环形倒计时/段控/任务列表/今日统计/设置抽屉全量落地；两个经验沉淀：NInput 的 fallthrough 事件被 `inheritAttrs:false` 吞掉，键盘事件须经 `:input-props` 直绑内层 input 且带 isComposing 守卫；图标按钮必须补 aria-label。
 - [平台外壳与首页工具墙](issues/tickets/007-shell-ui.md) — 导航完全由注册表驱动；暗色持久化 `tw:theme` + 首帧防闪白脚本；未知工具/未知路由双兜底；移动端顶栏 + 抽屉。
 - [端到端验证与交付](issues/tickets/008-verify-e2e.md) — 类型检查与构建零错误；浏览器实测（计时推进/暂停/跳过/持久化/暗色/404/375px 响应式）通过并双主题截图比对；环境限制（IAB 合成按键不可靠）已记录。
+- [番茄钟全屏专注模式](issues/tickets/009-fullscreen-focus-mode.md) — 沉浸层 + Fullscreen API 增强（自动降级）；Teleport 覆盖层不用 naive 组件，根挂 `.dark` 强制深色沉浸；点击环面/空格切换、Wake Lock 防息屏；入口经用户反馈从计时卡角落移至页头动作组（与设置成组）。
 
 ## Not yet specified
 
