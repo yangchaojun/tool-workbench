@@ -54,6 +54,16 @@ src/
 - **所有持久化走 `loadZodJson` / `saveZodJson`**：读取经 Zod 校验，缺字段回落默认值、坏数据整体回落，schema 演进不会崩。
 - **计时基于时间戳（endsAt）**而非累计 tick：后台节流、休眠唤醒、跨刷新都能校正。
 
+## 架构图
+
+> 由 [archify](https://github.com/cathrynlavery/archify) 生成的交互式架构图，含暗/亮双主题与注解，直接用浏览器打开即可浏览：
+
+- **📊 运行时架构图** —— [`diagrams/toolworkbench-runtime.html`](diagrams/toolworkbench-runtime.html)（含 Vite 工具链 → 平台外壳 → 注册表 → 工具实现的运行时全景）
+- **📐 图源数据**（JSON）—— [`diagrams/toolworkbench-runtime.architecture.json`](diagrams/toolworkbench-runtime.architecture.json)
+- **📸 视觉检查快照** —— [`diagrams/toolworkbench-runtime.visual-check.html`](diagrams/toolworkbench-runtime.visual-check.html)（暗/亮主题 × 1440×900 / 2048×1320）
+
+生成方式：`diagrams` 目录下按 archify 流程输入架构描述重新生成即可，产物以 `toolworkbench-runtime.*` 命名。
+
 ## 如何新增一个工具
 
 以一个假设的「JSON 格式化」为例，全程只有两步：
