@@ -1,0 +1,470 @@
+{
+  "schema_version": 1,
+  "diagram_type": "architecture",
+  "meta": {
+    "title": "ToolWorkbench · 运行时架构",
+    "locale": "zh-CN",
+    "quality_profile": "showcase",
+    "repository": {
+      "url": "https://github.com/yangchaojun/tool-workbench",
+      "revision": "e7453813c6ab20147289b33705d66416a9042067"
+    },
+    "viewBox": [
+      1300,
+      620
+    ]
+  },
+  "components": [
+    {
+      "id": "vite",
+      "type": "external",
+      "label": "Vite 8 工具链",
+      "sublabel": "dev / build · vue-tsc",
+      "pos": [
+        34,
+        36
+      ],
+      "size": [
+        150,
+        64
+      ],
+      "sources": [
+        {
+          "path": "vite.config.ts"
+        },
+        {
+          "path": "package.json",
+          "label": "scripts"
+        }
+      ]
+    },
+    {
+      "id": "webapis",
+      "type": "external",
+      "label": "浏览器 Web API",
+      "sublabel": "通知 · 提示音 · 防息屏",
+      "pos": [
+        1094,
+        36
+      ],
+      "size": [
+        180,
+        84
+      ],
+      "sources": [
+        {
+          "path": "src/tools/pomodoro/utils/notify.ts"
+        },
+        {
+          "path": "src/tools/pomodoro/utils/audio.ts"
+        },
+        {
+          "path": "src/shared/composables/useWakeLock.ts"
+        }
+      ]
+    },
+    {
+      "id": "entry",
+      "type": "frontend",
+      "label": "应用入口",
+      "sublabel": "main.ts · index.html",
+      "pos": [
+        34,
+        256
+      ],
+      "size": [
+        150,
+        66
+      ],
+      "sources": [
+        {
+          "path": "src/main.ts"
+        }
+      ]
+    },
+    {
+      "id": "shell",
+      "type": "frontend",
+      "label": "平台外壳",
+      "sublabel": "明暗主题 · zhCN 本地化",
+      "pos": [
+        246,
+        256
+      ],
+      "size": [
+        150,
+        66
+      ],
+      "sources": [
+        {
+          "path": "src/app/App.vue"
+        }
+      ]
+    },
+    {
+      "id": "router",
+      "type": "frontend",
+      "label": "Vue Router",
+      "sublabel": "单一动态段 /tools/:toolId",
+      "pos": [
+        458,
+        256
+      ],
+      "size": [
+        150,
+        66
+      ],
+      "sources": [
+        {
+          "path": "src/app/router/index.ts"
+        }
+      ]
+    },
+    {
+      "id": "toolhost",
+      "type": "frontend",
+      "label": "ToolHost",
+      "sublabel": "defineAsyncComponent",
+      "pos": [
+        670,
+        256
+      ],
+      "size": [
+        150,
+        66
+      ],
+      "sources": [
+        {
+          "path": "src/app/views/ToolHost.vue"
+        }
+      ]
+    },
+    {
+      "id": "registry",
+      "type": "frontend",
+      "label": "工具注册表",
+      "sublabel": "core/tools 注册契约",
+      "pos": [
+        882,
+        256
+      ],
+      "size": [
+        150,
+        66
+      ],
+      "sources": [
+        {
+          "path": "src/core/tools/registry.ts"
+        },
+        {
+          "path": "src/core/tools/types.ts"
+        }
+      ]
+    },
+    {
+      "id": "pomodoro",
+      "type": "frontend",
+      "label": "番茄任务钟",
+      "sublabel": "Pinia · Zod · Vue 视图",
+      "pos": [
+        1094,
+        248
+      ],
+      "size": [
+        180,
+        82
+      ],
+      "tag": "唯一已接入工具",
+      "sources": [
+        {
+          "path": "src/tools/pomodoro/stores/pomodoro.ts",
+          "line": 1,
+          "label": "计时内核"
+        },
+        {
+          "path": "src/tools/pomodoro/tool.ts"
+        },
+        {
+          "path": "src/tools/pomodoro/schemas.ts",
+          "label": "领域模型"
+        }
+      ]
+    },
+    {
+      "id": "theme",
+      "type": "frontend",
+      "label": "主题 Store",
+      "sublabel": "Pinia · tw:theme 持久化",
+      "pos": [
+        246,
+        390
+      ],
+      "size": [
+        150,
+        66
+      ],
+      "sources": [
+        {
+          "path": "src/app/stores/theme.ts"
+        }
+      ]
+    },
+    {
+      "id": "storage",
+      "type": "frontend",
+      "label": "zodStorage",
+      "sublabel": "load/saveZodJson · 坏数据回落",
+      "pos": [
+        1094,
+        390
+      ],
+      "size": [
+        180,
+        66
+      ],
+      "sources": [
+        {
+          "path": "src/shared/storage/zodStorage.ts"
+        }
+      ]
+    },
+    {
+      "id": "localstorage",
+      "type": "database",
+      "label": "同源 localStorage",
+      "sublabel": "tw:* 键 · 仅当前 origin",
+      "pos": [
+        1094,
+        522
+      ],
+      "size": [
+        180,
+        66
+      ]
+    }
+  ],
+  "boundaries": [
+    {
+      "kind": "region",
+      "label": "构建 / 开发工具链（Node 环境）",
+      "wraps": [
+        "vite"
+      ],
+      "pad": 18
+    },
+    {
+      "kind": "region",
+      "label": "浏览器页面运行时 · 可信应用（零服务端）",
+      "wraps": [
+        "entry",
+        "shell",
+        "router",
+        "toolhost",
+        "registry",
+        "pomodoro",
+        "theme",
+        "storage"
+      ],
+      "pad": 24
+    },
+    {
+      "kind": "security-group",
+      "label": "权限门控浏览器 API",
+      "wraps": [
+        "webapis"
+      ],
+      "pad": 22
+    },
+    {
+      "kind": "security-group",
+      "label": "同源持久化存储（origin 作用域）",
+      "wraps": [
+        "localstorage"
+      ],
+      "pad": 22
+    }
+  ],
+  "connections": [
+    {
+      "id": "vite-to-entry",
+      "from": "vite",
+      "to": "entry",
+      "label": "构建产物 JS / CSS",
+      "variant": "dashed",
+      "fromSide": "bottom",
+      "toSide": "top",
+      "labelAt": [
+        109,
+        168
+      ]
+    },
+    {
+      "id": "entry-to-shell",
+      "from": "entry",
+      "to": "shell",
+      "label": "createApp + 插件注册 · mount",
+      "fromSide": "right",
+      "toSide": "left",
+      "labelAt": [
+        215,
+        340
+      ]
+    },
+    {
+      "id": "shell-to-router",
+      "from": "shell",
+      "to": "router",
+      "label": "RouterView 渲染",
+      "fromSide": "right",
+      "toSide": "left",
+      "labelAt": [
+        427,
+        340
+      ]
+    },
+    {
+      "id": "router-to-toolhost",
+      "from": "router",
+      "to": "toolhost",
+      "label": "/tools/:toolId → props",
+      "fromSide": "right",
+      "toSide": "left",
+      "labelAt": [
+        639,
+        340
+      ]
+    },
+    {
+      "id": "toolhost-to-registry",
+      "from": "toolhost",
+      "to": "registry",
+      "label": "getTool(toolId) 解析",
+      "fromSide": "right",
+      "toSide": "left",
+      "labelAt": [
+        851,
+        340
+      ]
+    },
+    {
+      "id": "registry-to-pomodoro",
+      "from": "registry",
+      "to": "pomodoro",
+      "label": "component() → 动态 import 分包",
+      "fromSide": "right",
+      "toSide": "left",
+      "labelAt": [
+        1063,
+        348
+      ]
+    },
+    {
+      "id": "pomodoro-to-storage",
+      "from": "pomodoro",
+      "to": "storage",
+      "label": "读写 tw:pomodoro:*",
+      "fromSide": "bottom",
+      "toSide": "top",
+      "labelAt": [
+        1184,
+        366
+      ]
+    },
+    {
+      "id": "storage-to-localstorage",
+      "from": "storage",
+      "to": "localstorage",
+      "label": "JSON 读写 + Zod 校验",
+      "fromSide": "bottom",
+      "toSide": "top",
+      "labelAt": [
+        1184,
+        490
+      ]
+    },
+    {
+      "id": "shell-to-theme",
+      "from": "shell",
+      "to": "theme",
+      "label": "useThemeStore · 暗色状态",
+      "fromSide": "bottom",
+      "toSide": "top",
+      "labelAt": [
+        321,
+        366
+      ]
+    },
+    {
+      "id": "theme-to-storage",
+      "from": "theme",
+      "to": "storage",
+      "label": "读写 tw:theme",
+      "fromSide": "right",
+      "toSide": "left",
+      "labelAt": [
+        720,
+        420
+      ]
+    },
+    {
+      "id": "pomodoro-to-webapis",
+      "from": "pomodoro",
+      "to": "webapis",
+      "label": "通知 / 提示音 / 防息屏",
+      "variant": "dashed",
+      "fromSide": "top",
+      "toSide": "bottom",
+      "labelAt": [
+        1184,
+        166
+      ]
+    }
+  ],
+  "cards": [
+    {
+      "dot": "cyan",
+      "title": "平台契约 · 工具注册表",
+      "items": [
+        "唯一清单源：首页/侧栏/路由",
+        "Zod 校验注册，id 重复抛错",
+        "新增工具仅改 tools/index.ts"
+      ]
+    },
+    {
+      "dot": "emerald",
+      "title": "本地优先持久化",
+      "items": [
+        "zodStorage：解析→校验→回落",
+        "键：tw:theme 与 pomodoro:*",
+        "runtime 关键跃迁落盘；降级"
+      ]
+    },
+    {
+      "dot": "rose",
+      "title": "番茄钟计时内核",
+      "items": [
+        "endsAt 时间戳驱动可校正",
+        "刷新恢复 running→paused",
+        "每 4 个专注进长休；限 2000"
+      ]
+    },
+    {
+      "dot": "amber",
+      "title": "外部依赖与权限边界",
+      "items": [
+        "零服务端，仅存本浏览器",
+        "AudioContext 须用户手势",
+        "通知/WakeLock 按能力降级"
+      ]
+    },
+    {
+      "dot": "violet",
+      "title": "视图层与路由",
+      "items": [
+        "ToolHost 懒加载逐工具分包",
+        "仅 /tools/:toolId + 404",
+        "计时中标题显示倒计时"
+      ]
+    }
+  ]
+}

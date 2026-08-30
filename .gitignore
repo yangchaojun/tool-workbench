@@ -4,3 +4,6 @@ dist-ssr
 *.local
 .DS_Store
 *.log
+
+# Archify regenerable visual-check evidence (screenshots / contact sheet / receipt)
+diagrams/*.visual-check.*
