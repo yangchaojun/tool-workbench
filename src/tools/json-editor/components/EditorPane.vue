@@ -55,7 +55,7 @@ defineExpose({ remeasure })
 
 <template>
   <div
-    class="relative flex h-full min-h-0 flex-col overflow-hidden rounded-card border bg-card shadow-card transition-shadow"
+    class="relative flex h-full min-h-0 flex-col overflow-clip rounded-card border bg-card shadow-card transition-shadow"
     :class="dragDepth > 0 ? 'border-primary ring-2 ring-primary/30' : 'border-line/60'"
     @dragenter.prevent="dragDepth += 1"
     @dragover.prevent
@@ -82,6 +82,7 @@ defineExpose({ remeasure })
         v-model="store.input"
         language="json"
         :history="false"
+        :search="true"
         :error-mark="errorMark"
       />
     </div>

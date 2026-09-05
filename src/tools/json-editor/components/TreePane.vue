@@ -76,11 +76,6 @@ function locate(path: MutPath) {
   requestAnimationFrame(() => scrollToNode(path))
 }
 
-defineExpose({
-  /** 供查询面板 / 查找框外部定位（保留扩展点） */
-  locate,
-})
-
 const highlight = computed<MutPath | null>(() =>
   matchPaths.value.length > 0 ? matchPaths.value[matchIndex.value] : null,
 )
@@ -88,7 +83,7 @@ const highlight = computed<MutPath | null>(() =>
 
 <template>
   <div
-    class="flex h-full min-h-0 flex-col overflow-hidden rounded-card border bg-card p-4 shadow-card"
+    class="flex h-full min-h-0 flex-col overflow-clip rounded-card border bg-card p-4 shadow-card"
     :class="store.hasData ? 'border-line/60' : 'border-line/40'"
   >
     <template v-if="store.hasData">

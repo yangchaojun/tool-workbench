@@ -5,7 +5,7 @@ import { CloudUploadOutline } from '@vicons/ionicons5'
 
 import { diffJson, diffStats } from '../diff/diff'
 import { locateJsonError } from '../parser/locate'
-import { formatBytes, useJsonEditorStore } from '../stores/jsonEditor'
+import { formatBytes, UPLOAD_CAP_BYTES } from '../stores/jsonEditor'
 import DiffTree from '../components/DiffTree.vue'
 
 /**
@@ -13,14 +13,12 @@ import DiffTree from '../components/DiffTree.vue'
  * 双方合法时自动给出结构化 diff（见 CONTEXT.md「对比」）。
  */
 
-const store = useJsonEditorStore()
-
 const leftText = ref('')
 const rightText = ref('')
 const leftFileInput = ref<HTMLInputElement | null>(null)
 const rightFileInput = ref<HTMLInputElement | null>(null)
-
-const UPLOAD_CAP_BYTES = 5 * 1024 * 1024
+const leftUploadError = ref<string | null>(null)
+const rightUploadError = ref<string | null>(null)
 
 interface SideState {
   ok: boolean
@@ -83,13 +81,19 @@ async function onFile(event: Event, side: 'left' | 'right') {
   const file = target.files?.[0]
   target.value = ''
   if (file === undefined) return
+  const errorRef = side === 'left' ? leftUploadError : rightUploadError
+  errorRef.value = null
   if (file.size > UPLOAD_CAP_BYTES) {
-    store.uploadError = `文件过大（${formatBytes(file.size)}），上传上限 5MB`
+    errorRef.value = `文件过大（${formatBytes(file.size)}），上传上限 5MB`
     return
   }
-  const text = await file.text()
-  if (side === 'left') leftText.value = text
-  else rightText.value = text
+  try {
+    const text = await file.text()
+    if (side === 'left') leftText.value = text
+    else rightText.value = text
+  } catch {
+    errorRef.value = `无法读取文件 ${file.name}`
+  }
 }
 </script>
 
@@ -111,6 +115,9 @@ async function onFile(event: Event, side: 'left' | 'right') {
           >
             {{ side.state.ok ? `✓ 合法 JSON · ${formatBytes(side.state.size)}` : `✗ ${side.state.error}` }}
           </span>
+          <span v-else-if="(key === 'left' ? leftUploadError : rightUploadError) !== null" class="text-xs text-red-600 dark:text-red-400">
+            {{ key === 'left' ? leftUploadError : rightUploadError }}
+          </span>
           <span v-else class="text-xs text-ink-muted">粘贴或载入 JSON</span>
           <div class="flex-1" />
           <NButton size="tiny" quaternary @click="pickFile(key as 'left' | 'right')">
@@ -121,11 +128,12 @@ async function onFile(event: Event, side: 'left' | 'right') {
           </NButton>
         </div>
         <NInput
-          v-model:value="side.text"
+          :value="side.text"
           type="textarea"
           class="font-mono"
           :autosize="{ minRows: 8, maxRows: 14 }"
           placeholder='{"example": true}'
+          @update:value="(v: string) => (key === 'left' ? (leftText = v) : (rightText = v))"
         />
         <input
           :ref="(el) => setFileRef(key as 'left' | 'right', el)"

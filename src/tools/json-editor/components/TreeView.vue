@@ -59,7 +59,7 @@ function onCollapseAll() {
         </button>
       </div>
     </div>
-    <div class="min-h-0 flex-1 overflow-auto pr-1">
+    <div data-tree-scroll class="min-h-0 flex-1 overflow-auto pr-1">
       <TreeNode
         :key="`root-${forceRefresh}`"
         name="(根)"

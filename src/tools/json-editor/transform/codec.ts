@@ -9,17 +9,20 @@ export function escapeJsonText(text: string): string {
   return JSON.stringify(text)
 }
 
+/** 反转义输入不是合法字符串字面量时抛出（与解析失败区分） */
+export class UnescapeTypeError extends Error {}
+
 /** 把 JSON 字符串字面量还原为内层文本；不是合法字面量时抛出中文错误 */
 export function unescapeJsonText(text: string): string {
   const trimmed = text.trim()
   try {
     const value: unknown = JSON.parse(trimmed)
-    if (typeof value !== 'string') {
-      throw new Error('输入必须是 JSON 字符串字面量（以双引号包裹）')
-    }
+    if (typeof value !== 'string') throw new UnescapeTypeError()
     return value
   } catch (error) {
-    if (error instanceof Error && error.message.startsWith('输入必须')) throw error
+    if (error instanceof UnescapeTypeError) {
+      throw new Error('输入必须是 JSON 字符串字面量（以双引号包裹）')
+    }
     throw new Error('不是合法的 JSON 字符串字面量（检查引号与转义是否完整）')
   }
 }

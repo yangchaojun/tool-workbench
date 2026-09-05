@@ -3,6 +3,7 @@ import { onBeforeUnmount, onMounted, ref, watch } from 'vue'
 import { EditorView } from '@codemirror/view'
 import { Compartment, EditorState } from '@codemirror/state'
 import { json } from '@codemirror/lang-json'
+import { search } from '@codemirror/search'
 
 import {
   buildBaseExtensions,
@@ -24,8 +25,13 @@ const props = withDefaults(
     errorMark?: CodeErrorMark | null
     /** 内建撤销历史；工具侧用统一历史栈接管时置 false（见 ADR-0003） */
     history?: boolean
+    /**
+     * 安装搜索状态扩展（供工具侧经编程式 @codemirror/search API 驱动查找替换）；
+     * 内建搜索面板 UI 被抑制，搜索交互由工具侧自绘（见 ADR-0001 契约扩展）。
+     */
+    search?: boolean
   }>(),
-  { readonly: false, language: 'json', errorMark: null, history: true },
+  { readonly: false, language: 'json', errorMark: null, history: true, search: false },
 )
 
 const emit = defineEmits<{ 'update:modelValue': [value: string] }>()
@@ -43,6 +49,10 @@ onMounted(() => {
       doc: props.modelValue,
       extensions: [
         ...buildBaseExtensions(props.history),
+        // 空面板：仅激活 query StateField，不呈现内建搜索 UI
+        ...(props.search
+          ? [search({ createPanel: () => ({ dom: document.createElement('div') }) })]
+          : []),
         languageConf.of(props.language === 'json' ? json() : []),
         readonlyConf.of(readonlyExtensions(props.readonly)),
         EditorView.updateListener.of((update) => {

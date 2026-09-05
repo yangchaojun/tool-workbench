@@ -71,12 +71,23 @@ export function registerNodeEl(key: string, el: HTMLElement): void {
 }
 
 export function unregisterNodeEl(key: string): void {
-  if (nodeEls.get(key)?.isConnected === false) nodeEls.delete(key)
+  nodeEls.delete(key)
 }
 
 export function scrollToNode(path: JsonPath): void {
   const el = nodeEls.get(pathKey(path))
-  el?.scrollIntoView({ block: 'center', behavior: 'smooth' })
+  if (!el) return
+  // 只滚树内部滚动容器：scrollIntoView 会连带滚动 overflow-hidden 祖先
+  // （hidden 容器可编程滚动），把整个面板滚出视野
+  const scroller = el.closest('[data-tree-scroll]')
+  if (scroller === null) {
+    el.scrollIntoView({ block: 'center' })
+    return
+  }
+  const viewport = scroller.getBoundingClientRect()
+  const rect = el.getBoundingClientRect()
+  const delta = rect.top + rect.height / 2 - (viewport.top + viewport.height / 2)
+  scroller.scrollTo({ top: scroller.scrollTop + delta, behavior: 'smooth' })
 }
 
 // ── 拖拽状态 ──────────────────────────────────────────────────────

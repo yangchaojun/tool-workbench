@@ -100,13 +100,6 @@ function close() {
   props.getView()?.dispatch({ effects: setSearchQuery.of(new SearchQuery({ search: '' })) })
   emit('close')
 }
-
-defineExpose({
-  /** 打开时聚焦查找框 */
-  focus() {
-    // 由父组件经 ref 聚焦首个输入框
-  },
-})
 </script>
 
 <template>

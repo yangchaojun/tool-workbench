@@ -26,7 +26,7 @@ const LEGACY_PERSIST_KEY = 'tw:json-viewer:input'
 // 软上限：超出即警告、暂停自动行为，但不阻止使用（见 CONTEXT.md「软上限」）
 const SOFT_CAP_BYTES = 1024 * 1024
 const PERSIST_CAP_BYTES = 256 * 1024
-const UPLOAD_CAP_BYTES = 5 * 1024 * 1024
+export const UPLOAD_CAP_BYTES = 5 * 1024 * 1024
 const AUTO_VALIDATE_DEBOUNCE_MS = 300
 
 export type JsonParseResult =
@@ -133,6 +133,7 @@ export const useJsonEditorStore = defineStore('json-editor', () => {
         rawMessage: error instanceof Error ? error.message : String(error),
       }
       dataStale.value = data.value !== undefined
+      markSettled()
     }
   }
 
@@ -315,6 +316,7 @@ export const useJsonEditorStore = defineStore('json-editor', () => {
     input.value = text
     // 写入后立即校验（超软上限时暂停自动校验，交由用户手动触发）
     if (!overSoftCap.value) validate()
+    markSettled()
     persist()
   }
 
@@ -327,23 +329,25 @@ export const useJsonEditorStore = defineStore('json-editor', () => {
 
   // ── 原有动作 ───────────────────────────────────────────────────
 
-  function writeOutput(text: string, mode: OutputMode) {
+  /** 格式化/压缩：整段重写输入文本（数据不变），一次历史记录 */
+  function rewriteInput(text: string, mode: OutputMode) {
     commitTextInput()
     input.value = text
     result.value = { ok: true, data: data.value }
     dataStale.value = false
     outputMode.value = mode
+    markSettled()
     persist()
   }
 
   function format() {
     if (formatted.value === null) return
-    writeOutput(formatted.value, 'format')
+    rewriteInput(formatted.value, 'format')
   }
 
   function minify() {
     if (minified.value === null) return
-    writeOutput(minified.value, 'minify')
+    rewriteInput(minified.value, 'minify')
   }
 
   async function copyResult(): Promise<boolean> {

@@ -190,6 +190,8 @@ watch(
       startEdit()
     }
   },
+  // 新挂载的节点也要接住「添加子项后自动进入编辑」的一次性信号
+  { immediate: true },
 )
 
 // ── 添加 / 删除 / 排序 ─────────────────────────────────────────
@@ -232,7 +234,8 @@ onMounted(() => {
   if (rowEl.value !== null) registerNodeEl(myKey.value, rowEl.value)
 })
 onBeforeUnmount(() => unregisterNodeEl(myKey.value))
-watch(myKey, (key) => {
+watch(myKey, (key, oldKey) => {
+  if (oldKey !== undefined) unregisterNodeEl(oldKey)
   if (rowEl.value !== null) registerNodeEl(key, rowEl.value)
 })
 
@@ -418,7 +421,7 @@ const lengthLabel = computed(() =>
           v-model:value="editType"
           size="tiny"
           :options="typeOptions"
-          class="w-24"
+          style="width: 6rem"
           :consistent-menu-width="false"
         />
         <NInput
@@ -434,7 +437,7 @@ const lengthLabel = computed(() =>
           v-else-if="editType === 'boolean'"
           :value="editBool ? 'true' : 'false'"
           size="tiny"
-          class="w-24"
+          style="width: 6rem"
           :consistent-menu-width="false"
           :options="[
             { label: 'true', value: 'true' },

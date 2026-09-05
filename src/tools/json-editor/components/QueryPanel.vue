@@ -108,7 +108,8 @@ function extractToEditor() {
         v-model:value="lang"
         size="tiny"
         :options="langOptions"
-        class="w-28 shrink-0"
+        class="shrink-0"
+        style="width: 7rem"
         :consistent-menu-width="false"
       />
       <NInput
