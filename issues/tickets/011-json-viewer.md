@@ -34,7 +34,17 @@ created: 2026-09-05
 
 ### 环境限制与备忘
 
+- **CodeMirror StateField 陷阱（浏览器实测抓到的真 bug，已修）**：`StateField.update` 里遍历 `tr.effects` 不能只判 `effect.value === null`——同一事务里还有 `EditorView.scrollIntoView` 等 effect（value 非空），会被误当标记 effect 处理（`doc.lineAt(undefined)` 抛错、整个事务失败），导致错误标记永远不渲染。必须用 `effect.is(setErrorMark)` 过滤。
+- **Vite HMR 双实例陷阱（排查假象）**：长会话 dev server 经多次 HMR 后，同一模块会以不同 `?t=` 时间戳被加载成多份实例（store/组件各两份），表现为「写入 store 无任何响应、emit 链断裂」的僵尸态——重启 dev server 即消失，生产构建无此机制。据此排查时务必先重启 server 再下结论。
 - IAB 自动化的 `fill()` 在 contenteditable 上表现为追加而非替换，自动化测试需走「点击 + Ctrl/Cmd+A + 逐字输入」路径；真实用户粘贴/键入不受影响。
 - `navigator.clipboard.writeText` 在 IAB 中可用；复制反馈按钮文案需等 Vue 渲染后再读（自动化立即读会抢跑）。
 - 上传（input[type=file] 与拖拽）无法在 IAB 中自动化，代码路径简单（`file.text()` + 大小护栏），留待人工验证。
-- 自动校验暂停（>1MB）与持久化上限路径未做浏览器实测，逻辑为纯 computed/分支，已由类型与代码评审覆盖。
+
+### 审查修复（code-review 两轴 + 浏览器实测回归）
+
+- 持久化上限从字符改为 UTF-8 字节计（256KB），与 CONTEXT.md「软上限」口径一致（原实现下 CJK 输入可超出）。
+- 超软上限时「立即校验」按钮提升为状态栏右侧常驻入口——原实现只渲染在无结果分支，若上次结果为 ✓ 后编辑超限，用户会卡在过期结果上。
+- CodeEditor 挂载即应用初始 errorMark（恢复的输入自带错误时首帧渲染装饰），不能只依赖 watch。
+- Data Clump/Duplicated Code 清理：`CodeErrorMark` 类型入 kit.ts；`jsonValueType`/标签表收敛到 treeTypes.ts 供 TreeNode 与 TreeView 共用；matchMedia 去重。
+- ADR-0001 措辞对齐实现（`modelValue`/v-model 四能力），并注明高亮风格为纯视觉呈现、第二语言出现时须参数化。
+- 回归确认（重启 dev server 后全新页面）：错误定位（第 3 行 第 22 列 + 行背景 + 波浪线截图）、编辑防抖重校验、状态翻转与树同步、格式化/压缩/复制文案/下载/清空、软上限暂停 + 立即校验 + 超限不持久化（localStorage 为空）、typecheck/build 零错误。

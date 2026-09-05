@@ -11,7 +11,7 @@ const PERSIST_KEY = 'tw:json-viewer:input'
 
 // 软上限：超过即警告/暂停，但不阻止使用（见 CONTEXT.md「软上限」）
 const SOFT_CAP_BYTES = 1024 * 1024
-const PERSIST_CAP_CHARS = 262_144
+const PERSIST_CAP_BYTES = 256 * 1024
 const UPLOAD_CAP_BYTES = 5 * 1024 * 1024
 const AUTO_VALIDATE_DEBOUNCE_MS = 300
 
@@ -97,7 +97,9 @@ export const useJsonViewerStore = defineStore('json-viewer', () => {
   })
 
   function persist() {
-    if (input.value.length <= PERSIST_CAP_CHARS) {
+    // 上限按 UTF-8 字节计（256KB），与 CONTEXT.md「软上限」口径一致；
+    // schemas.ts 的字符 max 仅作读取防御（坏数据整体回落）
+    if (byteSize.value <= PERSIST_CAP_BYTES) {
       saveZodJson(PERSIST_KEY, { input: input.value })
     } else {
       removeZodJson(PERSIST_KEY)

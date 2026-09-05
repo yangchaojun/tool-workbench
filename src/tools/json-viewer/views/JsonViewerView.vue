@@ -18,8 +18,8 @@ const fileInput = ref<HTMLInputElement | null>(null)
 const editorPaneRef = ref<InstanceType<typeof EditorPane> | null>(null)
 
 // 宽屏并排（≥1024px），窄屏退化为 文本/树形 两个 Tab
-const wide = ref(window.matchMedia('(min-width: 1024px)').matches)
 const mql = window.matchMedia('(min-width: 1024px)')
+const wide = ref(mql.matches)
 const onMqlChange = (event: MediaQueryListEvent) => {
   wide.value = event.matches
 }
@@ -41,14 +41,19 @@ const status = computed(() => {
     return { kind: 'error', text: store.uploadError } as const
   }
   const r = store.result
-  if (r === null) return { kind: 'idle' } as const
-  if (r.ok) return { kind: 'ok' } as const
+  if (r === null) {
+    // 无结果：要么还没有输入，要么超过软上限等手动触发（提示由右侧超限徽标统一给出）
+    return store.input === ''
+      ? ({ kind: 'muted', text: '在左侧粘贴、上传或直接编辑 JSON，稍候即自动校验' } as const)
+      : ({ kind: 'muted', text: `输入 ${formatBytes(store.byteSize)}` } as const)
+  }
+  if (r.ok) return { kind: 'ok', text: '✓ 合法 JSON' } as const
   return {
     kind: 'error',
     text:
       r.location !== null
-        ? `第 ${r.location.line} 行 第 ${r.location.column} 列：${r.location.message}`
-        : r.rawMessage,
+        ? `✗ 第 ${r.location.line} 行 第 ${r.location.column} 列：${r.location.message}`
+        : `✗ ${r.rawMessage}`,
   } as const
 })
 
@@ -135,28 +140,24 @@ function pickFile() {
 
     <!-- 状态栏 -->
     <div class="mb-3 flex min-h-6 flex-wrap items-center gap-x-3 gap-y-1 text-sm">
-      <template v-if="status.kind === 'error'">
-        <span class="font-medium text-red-600 dark:text-red-400">✗ {{ status.text }}</span>
-      </template>
-      <template v-else-if="status.kind === 'ok'">
-        <span class="font-medium text-emerald-600 dark:text-emerald-400">✓ 合法 JSON</span>
-        <span class="text-ink-muted">{{ formatBytes(store.byteSize) }}</span>
-        <span v-if="store.overSoftCap" class="text-ink-muted">
-          · 已超过 1MB 软上限，自动校验暂停
-        </span>
-      </template>
-      <template v-else>
-        <template v-if="store.overSoftCap">
-          <span class="text-ink-muted">
-            输入 {{ formatBytes(store.byteSize) }}，超过 1MB 软上限：自动校验已暂停
-          </span>
-          <NButton size="tiny" type="primary" secondary @click="store.validate()">
-            立即校验
-          </NButton>
-        </template>
-        <span v-else class="text-ink-muted">
-          在左侧粘贴、上传或直接编辑 JSON，稍候即自动校验
-        </span>
+      <span
+        :class="{
+          'font-medium text-red-600 dark:text-red-400': status.kind === 'error',
+          'font-medium text-emerald-600 dark:text-emerald-400': status.kind === 'ok',
+          'text-ink-muted': status.kind === 'muted',
+        }"
+      >
+        {{ status.text }}
+      </span>
+      <span v-if="status.kind === 'ok'" class="text-ink-muted">
+        {{ formatBytes(store.byteSize) }}
+      </span>
+      <!-- 超软上限：无论当前结果是 ok / error / 无结果，都保持手动校验入口 -->
+      <template v-if="store.overSoftCap && store.input !== ''">
+        <span class="text-ink-muted">· 已超过 1MB，自动校验暂停</span>
+        <NButton size="tiny" type="primary" secondary @click="store.validate()">
+          立即校验
+        </NButton>
       </template>
     </div>
 

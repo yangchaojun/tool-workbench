@@ -19,6 +19,13 @@ import { tags as t } from '@lezer/highlight'
  * 语言与只读态是可变配置，由组件经 Compartment 在运行时切换。
  */
 
+/** 错误标记的坐标契约（行/列均 1 起始，与定位器对齐） */
+export interface CodeErrorMark {
+  line: number
+  column: number
+  message: string
+}
+
 /** 设置/清除错误标记：pos 为文档内偏移；null 表示清除 */
 export const setErrorMark = StateEffect.define<{ pos: number; message: string } | null>()
 
@@ -26,7 +33,9 @@ const errorMarkField = StateField.define<DecorationSet>({
   create: () => Decoration.none,
   update(marks, tr) {
     let next = marks.map(tr.changes)
+    // 只认自己的 effect——同一事务里还可能有 scrollIntoView 等其他 effect
     for (const effect of tr.effects) {
+      if (!effect.is(setErrorMark)) continue
       if (effect.value === null) {
         next = Decoration.none
       } else {

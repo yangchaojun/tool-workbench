@@ -8,6 +8,7 @@ import {
   buildBaseExtensions,
   readonlyExtensions,
   setErrorMark,
+  type CodeErrorMark,
 } from './kit'
 
 /**
@@ -20,7 +21,7 @@ const props = withDefaults(
     modelValue: string
     readonly?: boolean
     language?: 'json'
-    errorMark?: { line: number; column: number; message: string } | null
+    errorMark?: CodeErrorMark | null
   }>(),
   { readonly: false, language: 'json', errorMark: null },
 )
@@ -50,6 +51,8 @@ onMounted(() => {
       ],
     }),
   })
+  // 挂载即应用初始错误标记（如恢复的输入本身有错），不能只依赖 watch
+  applyErrorMark(props.errorMark)
 })
 
 onBeforeUnmount(() => {
@@ -79,23 +82,27 @@ watch(
 )
 
 // 错误标记：行背景 + 从错误列到行尾的波浪线；同时在视口内滚动到该处
+function applyErrorMark(mark: CodeErrorMark | null) {
+  if (!view) return
+  if (!mark) {
+    view.dispatch({ effects: setErrorMark.of(null) })
+    return
+  }
+  const lineNo = Math.min(Math.max(mark.line, 1), view.state.doc.lines)
+  const line = view.state.doc.line(lineNo)
+  const pos = Math.min(line.from + Math.max(mark.column - 1, 0), line.to)
+  view.dispatch({
+    effects: [
+      setErrorMark.of({ pos, message: mark.message }),
+      EditorView.scrollIntoView(pos, { y: 'center' }),
+    ],
+  })
+}
+
 watch(
   () => props.errorMark,
   (mark) => {
-    if (!view) return
-    if (!mark) {
-      view.dispatch({ effects: setErrorMark.of(null) })
-      return
-    }
-    const lineNo = Math.min(Math.max(mark.line, 1), view.state.doc.lines)
-    const line = view.state.doc.line(lineNo)
-    const pos = Math.min(line.from + Math.max(mark.column - 1, 0), line.to)
-    view.dispatch({
-      effects: [
-        setErrorMark.of({ pos, message: mark.message }),
-        EditorView.scrollIntoView(pos, { y: 'center' }),
-      ],
-    })
+    applyErrorMark(mark)
   },
 )
 

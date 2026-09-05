@@ -3,7 +3,11 @@ import { computed, ref, watch } from 'vue'
 import { NButton } from 'naive-ui'
 
 import TreeNode from './TreeNode.vue'
-import type { TreeCommand } from './treeTypes'
+import {
+  jsonValueType,
+  jsonValueTypeLabels,
+  type TreeCommand,
+} from './treeTypes'
 
 const props = defineProps<{
   /** 最近一次合法解析的数据（undefined 表示尚无可浏览内容） */
@@ -29,11 +33,11 @@ function broadcast(kind: 'expand' | 'collapse') {
 
 const rootSummary = computed(() => {
   const v = props.data
-  if (v === null) return 'null'
-  if (Array.isArray(v)) return `数组 · ${v.length} 项`
-  if (typeof v === 'object') return `对象 · ${Object.keys(v).length} 个键`
-  if (typeof v === 'string') return `字符串 · ${v.length} 字符`
-  return typeof v === 'number' ? '数字' : typeof v === 'boolean' ? '布尔' : ''
+  const kind = jsonValueType(v)
+  if (kind === 'object') return `对象 · ${Object.keys(v as object).length} 个键`
+  if (kind === 'array') return `数组 · ${(v as unknown[]).length} 项`
+  if (kind === 'string') return `字符串 · ${(v as string).length} 字符`
+  return jsonValueTypeLabels[kind]
 })
 </script>
 

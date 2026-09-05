@@ -6,6 +6,8 @@ import { ChevronDownOutline, ChevronForwardOutline } from '@vicons/ionicons5'
 import {
   CHILDREN_RENDER_CAP,
   DEPTH_RENDER_CAP,
+  jsonValueTypeLabels,
+  jsonValueType,
   type TreeCommand,
 } from './treeTypes'
 
@@ -17,24 +19,12 @@ const props = defineProps<{
 }>()
 
 const isContainer = computed(() => {
-  const v = props.value
-  return typeof v === 'object' && v !== null
+  const kind = jsonValueType(props.value)
+  return kind === 'object' || kind === 'array'
 })
-const isArray = computed(() => Array.isArray(props.value))
+const isArray = computed(() => jsonValueType(props.value) === 'array')
 
-const kindLabel = computed(() => {
-  if (!isContainer.value) {
-    if (props.value === null) return 'null'
-    return typeof props.value === 'string'
-      ? '字符串'
-      : typeof props.value === 'number'
-        ? '数字'
-        : typeof props.value === 'boolean'
-          ? '布尔'
-          : '未知'
-  }
-  return isArray.value ? '数组' : '对象'
-})
+const kindLabel = computed(() => jsonValueTypeLabels[jsonValueType(props.value)])
 
 const entries = computed<Array<{ key: string; value: unknown }>>(() => {
   const v = props.value
