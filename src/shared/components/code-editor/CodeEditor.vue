@@ -22,8 +22,10 @@ const props = withDefaults(
     readonly?: boolean
     language?: 'json'
     errorMark?: CodeErrorMark | null
+    /** 内建撤销历史；工具侧用统一历史栈接管时置 false（见 ADR-0003） */
+    history?: boolean
   }>(),
-  { readonly: false, language: 'json', errorMark: null },
+  { readonly: false, language: 'json', errorMark: null, history: true },
 )
 
 const emit = defineEmits<{ 'update:modelValue': [value: string] }>()
@@ -40,7 +42,7 @@ onMounted(() => {
     state: EditorState.create({
       doc: props.modelValue,
       extensions: [
-        ...buildBaseExtensions(),
+        ...buildBaseExtensions(props.history),
         languageConf.of(props.language === 'json' ? json() : []),
         readonlyConf.of(readonlyExtensions(props.readonly)),
         EditorView.updateListener.of((update) => {
@@ -111,7 +113,9 @@ function remeasure() {
   view?.requestMeasure()
 }
 
-defineExpose({ remeasure })
+// 视图访问：契约的显式扩展（ADR-0001）——供工具侧实现查找替换等
+// 编辑器级 UX（搜索状态属于工具 UI，不进共享组件）
+defineExpose({ remeasure, getView: () => view })
 </script>
 
 <template>
