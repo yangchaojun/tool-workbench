@@ -14,6 +14,8 @@ import {
   NRadioButton,
   NRadioGroup,
   NSwitch,
+  NTabPane,
+  NTabs,
 } from 'naive-ui'
 
 import App from './app/App.vue'
@@ -38,6 +40,8 @@ const naiveComponents = {
   NRadioButton,
   NRadioGroup,
   NSwitch,
+  NTabPane,
+  NTabs,
 }
 
 const app = createApp(App)

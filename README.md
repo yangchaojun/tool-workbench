@@ -5,6 +5,7 @@
 当前集成工具：
 
 - **番茄任务钟** —— 专注 / 短休 / 长休三段循环、任务绑定预估番茄数、今日统计、浏览器通知与提示音、全屏专注模式（沉浸层 + 桌面端原生全屏，点击环面或空格键切换计时，运行中防息屏）。
+- **JSON 查看器** —— 粘贴或上传 JSON：格式化 / 压缩、语法校验并精确定位错误（跨浏览器一致的 行:列 + 中文原因）、语法高亮文本与可折叠树形双视图、一键复制 / 下载，输入跨刷新恢复。
 
 ## 快速开始
 
@@ -35,16 +36,18 @@ src/
 │   ├── types.ts             # ToolManifest（Zod schema）+ ToolDefinition + defineTool
 │   └── registry.ts          # 注册表：registerTool / getTool / listTools
 ├── shared/
-│   └── storage/zodStorage.ts # Zod 守护的 localStorage 读写（坏数据回落默认值）
+│   ├── storage/zodStorage.ts # Zod 守护的 localStorage 读写（坏数据回落默认值）
+│   └── components/code-editor/ # CodeMirror 6 窄契约封装（首个共享组件，见 docs/adr/0001）
 └── tools/                   # 工具实现
     ├── index.ts             # ★ 注册表清单 —— 新增工具的唯一改动点
-    └── pomodoro/            # 一个工具一个目录，自包含
-        ├── tool.ts          # defineTool(...)：manifest + 图标 + 懒加载视图
-        ├── schemas.ts       # 领域模型（Zod）：settings / task / session / runtime
-        ├── stores/          # Pinia store：状态机 + 持久化 + 计时核心
-        ├── utils/           # audio（WebAudio 提示音）/ notify（浏览器通知）
-        ├── views/           # 工具主视图
-        └── components/      # 工具私有组件
+    ├── pomodoro/            # 一个工具一个目录，自包含
+    │   ├── tool.ts          # defineTool(...)：manifest + 图标 + 懒加载视图
+    │   ├── schemas.ts       # 领域模型（Zod）：settings / task / session / runtime
+    │   ├── stores/          # Pinia store：状态机 + 持久化 + 计时核心
+    │   ├── utils/           # audio（WebAudio 提示音）/ notify（浏览器通知）
+    │   ├── views/           # 工具主视图
+    │   └── components/      # 工具私有组件
+    └── json-viewer/         # JSON 查看器（parser/ 容错定位器，见 docs/adr/0002）
 ```
 
 关键设计：
