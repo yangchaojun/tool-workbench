@@ -39,7 +39,7 @@ src/
 └── tools/                   # 工具实现
     ├── index.ts             # ★ 注册表清单 —— 新增工具的唯一改动点
     └── pomodoro/            # 一个工具一个目录，自包含
-        ├── tool.ts          # defineTool(...)：manifest + 图标 + 懒加载视图 + 设置 schema
+        ├── tool.ts          # defineTool(...)：manifest + 图标 + 懒加载视图
         ├── schemas.ts       # 领域模型（Zod）：settings / task / session / runtime
         ├── stores/          # Pinia store：状态机 + 持久化 + 计时核心
         ├── utils/           # audio（WebAudio 提示音）/ notify（浏览器通知）
@@ -83,9 +83,6 @@ export const jsonFormatterTool = defineTool({
   },
   icon: GitNetworkOutline,           // 侧边栏与卡片图标（@vicons）
   component: () => import('./views/JsonFormatterView.vue'),  // 懒加载，逐工具分包
-  // 可选：工具级设置 schema，所有字段必须带默认值；
-  // 平台约定持久化键 tw:settings:<id>，读取自动经 Zod 校验
-  settingsSchema: z.object({ indent: z.number().default(2) }),
 })
 ```
 
@@ -95,9 +92,9 @@ export const jsonFormatterTool = defineTool({
 registerTool(jsonFormatterTool)
 ```
 
-完成。路由（`/tools/json-formatter`）、侧边栏入口、首页卡片、懒加载分包、设置持久化约定全部自动获得，平台外壳一行代码都不用改。
+完成。路由（`/tools/json-formatter`）、侧边栏入口、首页卡片、懒加载分包全部自动获得，平台外壳一行代码都不用改。
 
-工具内部需要状态时：用 Pinia setup store + `shared/storage/zodStorage.ts` 做持久化（参考 `tools/pomodoro/stores/pomodoro.ts`）。
+工具内部需要状态时：用 Pinia setup store + `shared/storage/zodStorage.ts` 做持久化（参考 `tools/pomodoro/stores/pomodoro.ts`）；设置类状态也由工具自管，schema 内联 `.default()` 保证缺字段回默认、坏数据整体回落。
 
 ## 设计系统
 

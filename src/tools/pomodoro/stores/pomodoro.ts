@@ -1,7 +1,6 @@
 import { computed, reactive, watch } from 'vue'
 import { defineStore } from 'pinia'
 
-import { getTool } from '@/core/tools/registry'
 import { loadZodJson, saveZodJson } from '@/shared/storage/zodStorage'
 
 import { playChime, prepareAudio } from '../utils/audio'
@@ -20,6 +19,9 @@ const SESSIONS_KEY = 'tw:pomodoro:sessions'
 const RUNTIME_KEY = 'tw:pomodoro:runtime'
 
 const SESSIONS_CAP = 2000
+
+// 与 tool.ts 的 manifest.name 保持一致（标题栏用；避免 store 反向依赖注册表）
+const TOOL_NAME = '番茄任务钟'
 
 export const phaseMeta: Record<PomodoroPhase, { label: string }> = {
   focus: { label: '专注' },
@@ -77,14 +79,15 @@ export const usePomodoroStore = defineStore('pomodoro', () => {
     return Array.from({ length: settings.longBreakEvery }, (_, i) => i < filled)
   })
 
-  const todayStart = computed(() => {
+  const todayStart = () => {
     const d = new Date()
     d.setHours(0, 0, 0, 0)
     return d.getTime()
+  }
+  const todayFocusSessions = computed(() => {
+    const start = todayStart()
+    return sessions.filter((s) => s.phase === 'focus' && s.endedAt >= start)
   })
-  const todayFocusSessions = computed(() =>
-    sessions.filter((s) => s.phase === 'focus' && s.endedAt >= todayStart.value),
-  )
   const todayFocusCount = computed(() => todayFocusSessions.value.length)
   const todayFocusMinutes = computed(() =>
     todayFocusSessions.value.reduce((acc, s) => acc + s.minutes, 0),
@@ -280,18 +283,22 @@ export const usePomodoroStore = defineStore('pomodoro', () => {
     () => saveZodJson(RUNTIME_KEY, runtime),
   )
 
-  // idle 时剩余时间跟随设置/模式变化
-  watch(totalMs, (ms) => {
-    if (runtime.status === 'idle') runtime.remainingMs = ms
-  })
+  // idle 时剩余时间跟随设置/模式变化；immediate 校正首次加载时
+  // 无 runtime 记录（remainingMs 默认 25min）与已存设置不一致的展示
+  watch(
+    totalMs,
+    (ms) => {
+      if (runtime.status === 'idle') runtime.remainingMs = ms
+    },
+    { immediate: true },
+  )
 
   // 标题栏：计时中显示倒计时，空闲显示工具名
-  const toolName = getTool('pomodoro')?.manifest.name ?? '番茄任务钟'
   watch(
     [clockText, () => runtime.status, () => runtime.phase],
     () => {
       if (runtime.status === 'idle') {
-        document.title = `${toolName} · 工具台`
+        document.title = `${TOOL_NAME} · 工具台`
         return
       }
       const suffix = runtime.status === 'paused' ? '（已暂停）' : ''

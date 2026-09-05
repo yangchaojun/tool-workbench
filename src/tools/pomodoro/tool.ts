@@ -2,8 +2,6 @@ import { TimerOutline } from '@vicons/ionicons5'
 
 import { defineTool } from '@/core/tools/types'
 
-import { pomodoroSettingsSchema } from './schemas'
-
 export const pomodoroTool = defineTool({
   manifest: {
     id: 'pomodoro',
@@ -13,5 +11,4 @@ export const pomodoroTool = defineTool({
   },
   icon: TimerOutline,
   component: () => import('./views/PomodoroView.vue'),
-  settingsSchema: pomodoroSettingsSchema,
 })

@@ -5,10 +5,11 @@ import { z } from 'zod'
 export const phaseEnum = z.enum(['focus', 'shortBreak', 'longBreak'])
 export type PomodoroPhase = z.output<typeof phaseEnum>
 
-// ── 设置（工具级设置契约：所有字段必须带默认值）─────────────────
+// ── 设置（约定：所有字段必须带默认值，供 zodStorage 缺字段回落）────
 
 export const pomodoroSettingsSchema = z.object({
-  focusMinutes: z.number().int().min(1).max(120).default(25),
+  /** 最大 99：与 MM:SS 时钟（含翻页钟）的 4 位显示保持一致 */
+  focusMinutes: z.number().int().min(1).max(99).default(25),
   shortBreakMinutes: z.number().int().min(1).max(30).default(5),
   longBreakMinutes: z.number().int().min(5).max(60).default(15),
   /** 每完成 N 个专注进入长休 */

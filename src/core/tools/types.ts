@@ -5,7 +5,8 @@ import type { Component } from 'vue'
  * 工具接入契约 —— 新增一个工具的全部成本：
  *   1. 在 `src/tools/<id>/` 下按目录约定实现（tool.ts + views/ + stores/ …）
  *   2. 在 `src/tools/index.ts` 里 `registerTool(...)` 一行
- * 路由、首页卡片、图标、设置持久化全部由注册表自动获得。
+ * 路由、首页卡片、图标全部由注册表自动获得；工具自身的持久化
+ * 由工具通过 `shared/storage/zodStorage.ts` 自管（见 pomodoro store）。
  */
 
 export const toolManifestSchema = z.object({
@@ -34,12 +35,6 @@ export interface ToolDefinition {
   icon: Component
   /** 工具主视图 */
   component: ToolComponentLoader
-  /**
-   * 工具级设置 schema：所有字段必须带默认值。
-   * 平台约定 localStorage 键 `tw:settings:<id>`，读取经 Zod 校验，
-   * 缺字段回落默认值，坏数据整体回落，保证升级安全。
-   */
-  settingsSchema?: z.ZodObject<any>
 }
 
 /** 工具定义入口：仅为获得类型提示与统一的接入点 */
