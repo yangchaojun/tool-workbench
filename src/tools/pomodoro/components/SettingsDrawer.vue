@@ -65,7 +65,7 @@ function restoreDefaults() {
             size="small"
             class="w-28"
             :min="1"
-            :max="120"
+            :max="99"
             :value="store.settings.focusMinutes"
             @update:value="bindNumber('focusMinutes')"
           />

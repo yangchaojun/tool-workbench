@@ -1,6 +1,4 @@
 <script setup lang="ts">
-import { computed } from 'vue'
-
 import { listTools } from '@/core/tools/registry'
 
 const tools = listTools()
@@ -12,14 +10,14 @@ const dateLabel = new Intl.DateTimeFormat('zh-CN', {
   weekday: 'long',
 }).format(now)
 
-const greeting = computed(() => {
-  const h = now.getHours()
-  if (h < 6) return '夜深了'
-  if (h < 12) return '早上好'
-  if (h < 14) return '中午好'
-  if (h < 18) return '下午好'
+function greetingFor(hour: number): string {
+  if (hour < 6) return '夜深了'
+  if (hour < 12) return '早上好'
+  if (hour < 14) return '中午好'
+  if (hour < 18) return '下午好'
   return '晚上好'
-})
+}
+const greeting = greetingFor(now.getHours())
 
 function tint(accent: string): string {
   return `${accent}1c`

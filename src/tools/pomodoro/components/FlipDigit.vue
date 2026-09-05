@@ -1,5 +1,5 @@
 <script setup lang="ts">
-import { ref, watch } from 'vue'
+import { onBeforeUnmount, ref, watch } from 'vue'
 
 // 参考 codepen wen-yan/ogjMmdr 的连续翻叶：前卡（旧值）上半叶与后卡（新值）
 // 下半叶在同一条 ease-in-out 里镜像旋转（0→180 / 180→0），角速度在 90° 交接处
@@ -14,6 +14,11 @@ const flipping = ref(false)
 // 翻转途中数字再变（跳段/重置）时作废旧定时器、重起新翻
 let flipToken = 0
 let cleanupTimer: number | undefined
+
+onBeforeUnmount(() => {
+  flipToken++
+  window.clearTimeout(cleanupTimer)
+})
 
 watch(
   () => props.digit,

@@ -18,8 +18,13 @@ export const router = createRouter({
           component: () => import('@/app/views/ToolHost.vue'),
           props: true,
         },
+        // 兜底路由放在布局内：404 页继承侧边栏与移动端抽屉导航
+        {
+          path: ':pathMatch(.*)*',
+          name: 'not-found',
+          component: () => import('@/app/views/NotFoundView.vue'),
+        },
       ],
     },
-    { path: '/:pathMatch(.*)*', name: 'not-found', component: () => import('@/app/views/NotFoundView.vue') },
   ],
 })

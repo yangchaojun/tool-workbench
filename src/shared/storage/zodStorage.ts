@@ -1,9 +1,10 @@
 import { z } from 'zod'
 
 /**
- * Zod 守护的 localStorage 读写 —— 所有持久化数据必须经过这里。
- * 读取路径：JSON.parse → 整体校验 → （对象 schema 时）缺字段并回默认值再校验
- * → 任一步失败回落 fallback。保证 schema 演进（新增字段）与坏数据都不会崩。
+ * Zod 守护的 localStorage 读取 —— 所有持久化数据必须经过这里。
+ * 读取路径：JSON.parse → schema.safeParse → 失败回落 fallback。
+ * schema 内联的 .default() 负责「缺字段回默认值」（含新增字段的旧数据），
+ * 因此无需额外合并逻辑；坏数据整体回落，schema 演进不会崩。
  */
 export function loadZodJson<S extends z.ZodType>(
   key: string,
@@ -14,25 +15,8 @@ export function loadZodJson<S extends z.ZodType>(
   try {
     const raw = localStorage.getItem(key)
     if (raw === null) return fallback
-    const data: unknown = JSON.parse(raw)
-
-    const direct = schema.safeParse(data)
-    if (direct.success) return direct.data
-
-    const defaults = schema.safeParse({})
-    if (
-      defaults.success &&
-      data !== null &&
-      typeof data === 'object' &&
-      !Array.isArray(data)
-    ) {
-      const merged = schema.safeParse({
-        ...(defaults.data as Record<string, unknown>),
-        ...(data as Record<string, unknown>),
-      })
-      if (merged.success) return merged.data
-    }
-    return fallback
+    const parsed = schema.safeParse(JSON.parse(raw))
+    return parsed.success ? parsed.data : fallback
   } catch {
     return fallback
   }

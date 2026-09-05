@@ -14,13 +14,23 @@ type WakeLockNavigator = Navigator & {
  */
 export function useWakeLock() {
   let sentinel: WakeLockSentinelLike | null = null
+  // acquire 是异步的：若在请求落定前发生 release（或新的 acquire 前又 release），
+  // 代际号让过期的请求直接释放自己得到的锁，避免屏保锁泄漏
+  let generation = 0
 
   async function acquire(): Promise<void> {
     const api = (navigator as WakeLockNavigator).wakeLock
     if (!api || sentinel) return
+    const gen = ++generation
     try {
-      sentinel = await api.request('screen')
-      sentinel.addEventListener('release', () => {
+      const s = await api.request('screen')
+      // 请求落定前的 release 使代际失效：放弃这把刚拿到、但已无人需要的锁
+      if (gen !== generation) {
+        void s.release()
+        return
+      }
+      sentinel = s
+      s.addEventListener('release', () => {
         sentinel = null
       })
     } catch {
@@ -29,6 +39,7 @@ export function useWakeLock() {
   }
 
   function release(): void {
+    generation++
     sentinel?.release().catch(() => {})
     sentinel = null
   }
