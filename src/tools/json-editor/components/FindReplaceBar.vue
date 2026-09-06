@@ -104,7 +104,7 @@ function close() {
 
 <template>
   <div
-    class="absolute right-3 top-3 z-10 flex w-[min(30rem,calc(100%-1.5rem))] flex-col gap-2 rounded-card border border-line/60 bg-card p-3 shadow-card"
+    class="absolute right-3 top-3 z-10 flex w-[min(30rem,calc(100%-1.5rem))] flex-col gap-2 rounded-panel border border-border bg-card p-3"
   >
     <div class="flex items-center gap-1.5">
       <NInput
@@ -116,12 +116,12 @@ function close() {
         @keydown.enter.prevent="nav(1)"
         @keydown.esc="close"
       />
-      <span v-if="findText !== ''" class="shrink-0 text-xs text-ink-muted">
+      <span v-if="findText !== ''" class="shrink-0 text-xs text-muted-foreground">
         {{ matchCount }} 处
       </span>
       <button
         type="button"
-        class="rounded p-1 text-ink-muted transition-colors hover:text-ink"
+        class="rounded p-1 text-muted-foreground transition-colors duration-150 hover:text-foreground"
         aria-label="上一个"
         @click="nav(-1)"
       >
@@ -129,7 +129,7 @@ function close() {
       </button>
       <button
         type="button"
-        class="rounded p-1 text-ink-muted transition-colors hover:text-ink"
+        class="rounded p-1 text-muted-foreground transition-colors duration-150 hover:text-foreground"
         aria-label="下一个"
         @click="nav(1)"
       >
@@ -137,7 +137,7 @@ function close() {
       </button>
       <button
         type="button"
-        class="rounded p-1 text-ink-muted transition-colors hover:text-ink"
+        class="rounded p-1 text-muted-foreground transition-colors duration-150 hover:text-foreground"
         aria-label="关闭"
         @click="close"
       >
@@ -169,7 +169,7 @@ function close() {
     <div class="flex items-center gap-3">
       <NCheckbox v-model:checked="caseSensitive" size="small">区分大小写</NCheckbox>
       <NCheckbox v-model:checked="useRegex" size="small">正则</NCheckbox>
-      <span v-if="message !== null" class="ml-auto text-xs text-ink-muted">{{ message }}</span>
+      <span v-if="message !== null" class="ml-auto text-xs text-muted-foreground">{{ message }}</span>
     </div>
   </div>
 </template>

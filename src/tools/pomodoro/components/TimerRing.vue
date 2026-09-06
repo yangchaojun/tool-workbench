@@ -35,7 +35,7 @@ const progressColor = computed(() =>
         cy="140"
         r="124"
         fill="none"
-        stroke="var(--color-line)"
+        stroke="var(--color-border)"
         :stroke-width="10"
         opacity="0.8"
       />
@@ -54,18 +54,18 @@ const progressColor = computed(() =>
     </svg>
     <div class="absolute inset-0 flex flex-col items-center justify-center gap-1.5">
       <span
-        class="font-semibold tracking-tight tabular-nums"
+        class="font-medium tracking-tight tabular-nums"
         :class="props.large ? 'text-7xl md:text-8xl' : 'text-5xl md:text-6xl'"
       >
         {{ store.clockText }}
       </span>
-      <span class="text-sm text-ink-muted">{{ store.statusLabel }}</span>
+      <span class="text-sm text-muted-foreground">{{ store.statusLabel }}</span>
       <span class="mt-1 flex gap-1.5" aria-hidden="true">
         <i
           v-for="(on, i) in store.cycleDots"
           :key="i"
           class="size-1.5 rounded-full"
-          :class="on ? 'bg-accent' : 'bg-line'"
+          :class="on ? 'bg-accent' : 'bg-border'"
         />
       </span>
     </div>

@@ -104,21 +104,21 @@ async function onFile(event: Event, side: 'left' | 'right') {
       <div
         v-for="(side, key) in { left: { label: 'A（原数据）', state: left, text: leftText }, right: { label: 'B（新数据）', state: right, text: rightText } }"
         :key="key"
-        class="rounded-card border border-line/60 bg-card p-3 shadow-card"
+        class="rounded-panel border border-border bg-card p-3"
       >
         <div class="mb-2 flex items-center gap-2">
           <span class="text-sm font-medium">{{ side.label }}</span>
           <span
             v-if="!side.state.empty"
             class="text-xs"
-            :class="side.state.ok ? 'text-emerald-600 dark:text-emerald-400' : 'text-red-600 dark:text-red-400'"
+            :class="side.state.ok ? 'text-accent' : 'text-destructive'"
           >
             {{ side.state.ok ? `✓ 合法 JSON · ${formatBytes(side.state.size)}` : `✗ ${side.state.error}` }}
           </span>
-          <span v-else-if="(key === 'left' ? leftUploadError : rightUploadError) !== null" class="text-xs text-red-600 dark:text-red-400">
+          <span v-else-if="(key === 'left' ? leftUploadError : rightUploadError) !== null" class="text-xs text-destructive">
             {{ key === 'left' ? leftUploadError : rightUploadError }}
           </span>
-          <span v-else class="text-xs text-ink-muted">粘贴或载入 JSON</span>
+          <span v-else class="text-xs text-muted-foreground">粘贴或载入 JSON</span>
           <div class="flex-1" />
           <NButton size="tiny" quaternary @click="pickFile(key as 'left' | 'right')">
             <template #icon>
@@ -145,20 +145,20 @@ async function onFile(event: Event, side: 'left' | 'right') {
     </div>
 
     <!-- 结果 -->
-    <div class="rounded-card border border-line/60 bg-card p-4 shadow-card">
-      <div v-if="diffResult === null" class="py-6 text-center text-sm text-ink-muted">
+    <div class="rounded-panel border border-border bg-card p-4">
+      <div v-if="diffResult === null" class="py-6 text-center text-sm text-muted-foreground">
         双侧均为合法 JSON 后自动对比
       </div>
       <template v-else>
         <div class="mb-3 flex items-center gap-3 text-sm">
           <template v-if="identical">
-            <span class="font-medium text-emerald-600 dark:text-emerald-400">✓ 两份数据完全相同</span>
+            <span class="font-medium text-accent">✓ 两份数据完全相同</span>
           </template>
           <template v-else>
             <span class="font-medium">差异：</span>
-            <span class="text-emerald-600 dark:text-emerald-400">+ {{ stats?.added ?? 0 }} 新增</span>
-            <span class="text-red-600 dark:text-red-400">− {{ stats?.removed ?? 0 }} 删除</span>
-            <span class="text-amber-600 dark:text-amber-400">~ {{ stats?.changed ?? 0 }} 修改</span>
+            <span class="text-accent">+ {{ stats?.added ?? 0 }} 新增</span>
+            <span class="text-destructive">− {{ stats?.removed ?? 0 }} 删除</span>
+            <span class="text-json-number">~ {{ stats?.changed ?? 0 }} 修改</span>
           </template>
         </div>
         <div v-if="!identical" class="max-h-[60vh] overflow-auto">

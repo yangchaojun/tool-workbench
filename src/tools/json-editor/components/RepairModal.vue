@@ -42,23 +42,23 @@ function cancel() {
     @update:show="cancel"
   >
     <div class="flex flex-col gap-3 text-sm">
-      <p class="text-ink-muted">
+      <p class="text-muted-foreground">
         检测到
-        <span class="font-medium text-ink">{{ candidate?.fixes.length ?? 0 }}</span>
+        <span class="font-medium text-foreground">{{ candidate?.fixes.length ?? 0 }}</span>
         处可自动修复的问题（<template v-for="(g, i) in groupedFixes" :key="g.kind">
           <span v-if="i > 0">、</span>{{ g.kind }} × {{ g.count }}</template>）。
         确认后应用以下修改。
       </p>
 
-      <ul class="max-h-72 overflow-auto rounded bg-primary-soft/30 p-2 font-mono text-xs">
+      <ul class="max-h-72 overflow-auto rounded bg-muted p-2 font-mono text-xs">
         <li v-for="(fix, i) in candidate?.fixes ?? []" :key="i" class="mb-2 last:mb-0">
-          <div class="mb-0.5 text-ink-muted">第 {{ fix.line }} 行 第 {{ fix.column }} 列 · {{ fix.kind }}</div>
+          <div class="mb-0.5 text-muted-foreground">第 {{ fix.line }} 行 第 {{ fix.column }} 列 · {{ fix.kind }}</div>
           <div class="flex items-start gap-2">
-            <span class="max-w-[45%] break-all rounded bg-red-500/10 px-1 py-0.5 text-red-600 line-through dark:text-red-400">
+            <span class="max-w-[45%] break-all rounded bg-destructive/10 px-1 py-0.5 text-destructive line-through">
               {{ fix.before === '' ? '（无）' : fix.before }}
             </span>
-            <span class="text-ink-muted">→</span>
-            <span class="min-w-0 break-all rounded bg-emerald-500/10 px-1 py-0.5 text-emerald-700 dark:text-emerald-400">
+            <span class="text-muted-foreground">→</span>
+            <span class="min-w-0 break-all rounded bg-accent/10 px-1 py-0.5 text-accent">
               {{ fix.after === '' ? '（删除）' : fix.after }}
             </span>
           </div>

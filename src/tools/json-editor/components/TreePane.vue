@@ -83,8 +83,8 @@ const highlight = computed<MutPath | null>(() =>
 
 <template>
   <div
-    class="flex h-full min-h-0 flex-col overflow-clip rounded-card border bg-card p-4 shadow-card"
-    :class="store.hasData ? 'border-line/60' : 'border-line/40'"
+    class="flex h-full min-h-0 flex-col overflow-clip rounded-panel border bg-card p-4"
+    :class="store.hasData ? 'border-border' : 'border-border/60'"
   >
     <template v-if="store.hasData">
       <div class="mb-2 flex shrink-0 items-center gap-1.5">
@@ -96,15 +96,15 @@ const highlight = computed<MutPath | null>(() =>
           clearable
         >
           <template #prefix>
-            <NIcon :size="13" class="text-ink-muted"><SearchOutline /></NIcon>
+            <NIcon :size="13" class="text-muted-foreground"><SearchOutline /></NIcon>
           </template>
         </NInput>
-        <span v-if="matches.length > 0" class="shrink-0 text-xs text-ink-muted">
+        <span v-if="matches.length > 0" class="shrink-0 text-xs text-muted-foreground">
           {{ matchIndex + 1 }}/{{ matches.length }}
         </span>
         <button
           type="button"
-          class="shrink-0 rounded p-1 text-ink-muted transition-colors hover:text-ink disabled:opacity-40"
+          class="shrink-0 rounded p-1 text-muted-foreground transition-colors duration-150 hover:text-foreground disabled:opacity-40"
           aria-label="上一个匹配"
           :disabled="matches.length === 0"
           @click="step(-1)"
@@ -113,7 +113,7 @@ const highlight = computed<MutPath | null>(() =>
         </button>
         <button
           type="button"
-          class="shrink-0 rounded p-1 text-ink-muted transition-colors hover:text-ink disabled:opacity-40"
+          class="shrink-0 rounded p-1 text-muted-foreground transition-colors duration-150 hover:text-foreground disabled:opacity-40"
           aria-label="下一个匹配"
           :disabled="matches.length === 0"
           @click="step(1)"
@@ -130,11 +130,11 @@ const highlight = computed<MutPath | null>(() =>
     </template>
     <div
       v-else-if="store.dataStale"
-      class="flex h-full items-center justify-center text-sm text-ink-muted"
+      class="flex h-full items-center justify-center text-sm text-muted-foreground"
     >
       树形视图已暂停同步——文本重新通过校验后自动恢复
     </div>
-    <div v-else class="flex h-full items-center justify-center text-sm text-ink-muted">
+    <div v-else class="flex h-full items-center justify-center text-sm text-muted-foreground">
       解析成功后在此编辑数据：增删改节点、拖拽排序、按键名排序
     </div>
   </div>

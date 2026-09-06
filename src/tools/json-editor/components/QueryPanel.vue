@@ -102,7 +102,7 @@ function extractToEditor() {
 </script>
 
 <template>
-  <div class="flex flex-col gap-1.5 border-t border-line/40 pt-2">
+  <div class="flex flex-col gap-1.5 border-t border-border/60 pt-2">
     <div class="flex items-center gap-1.5">
       <NSelect
         v-model:value="lang"
@@ -128,13 +128,13 @@ function extractToEditor() {
       </NButton>
     </div>
 
-    <div v-if="error !== null" class="text-xs text-red-600 dark:text-red-400">{{ error }}</div>
-    <div v-else-if="results.length === 0 && expression.trim() !== ''" class="text-xs text-ink-muted">
+    <div v-if="error !== null" class="text-xs text-destructive">{{ error }}</div>
+    <div v-else-if="results.length === 0 && expression.trim() !== ''" class="text-xs text-muted-foreground">
       {{ running ? '查询中…' : '无匹配结果' }}
     </div>
 
     <div v-if="results.length > 0" class="flex min-h-0 flex-col gap-1">
-      <div class="flex items-center gap-1 text-xs text-ink-muted">
+      <div class="flex items-center gap-1 text-xs text-muted-foreground">
         <span>{{ results.length }} 个结果</span>
         <div class="flex-1" />
         <NButton size="tiny" quaternary @click="copyResults">
@@ -145,11 +145,11 @@ function extractToEditor() {
         </NButton>
         <NButton size="tiny" quaternary @click="extractToEditor">提取到编辑器</NButton>
       </div>
-      <ul class="max-h-40 overflow-auto rounded bg-primary-soft/30 p-1 text-xs font-mono">
+      <ul class="max-h-40 overflow-auto rounded bg-muted p-1 text-xs font-mono text-foreground">
         <li v-for="(result, i) in results" :key="i" class="truncate">
           <button
             type="button"
-            class="w-full truncate rounded px-1 text-left hover:bg-primary-soft/60"
+            class="w-full truncate rounded px-1 text-left transition-colors duration-150 hover:bg-accent-50"
             :title="JSON.stringify(result)"
             @click="locate(result)"
           >

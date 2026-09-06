@@ -4,45 +4,89 @@
 @custom-variant dark (&:where(.dark, .dark *));
 
 /*
- * 设计 tokens —— 来自 design-system/toolworkbench/MASTER.md（ui-ux-pro-max：
- * Minimalism & Swiss）。语义色在 .dark 下覆盖；Tailwind 工具类运行时引用
- * CSS 变量，因此换肤只需覆盖变量。
+ * 设计 tokens —— 来自 design-system/toolworkbench/MASTER.md（Neutral
+ * Workbench，参照 jsonview.org）。语义色在 .dark 下覆盖；Tailwind 工具类
+ * 运行时引用 CSS 变量，因此换肤只需覆盖变量。层级只靠灰阶 + 1px 边框
+ * 表达，teal 是唯一强调色，禁用一切阴影。
  */
 @theme {
-  --font-sans:
-    'Inter', -apple-system, BlinkMacSystemFont, 'Segoe UI', 'PingFang SC',
-    'Hiragino Sans GB', 'Microsoft YaHei', 'Noto Sans CJK SC', sans-serif;
+  /* 全局等宽字体（UI + 数据一体），不加载 webfont；mono 无 CJK 字形自然回退系统字体 */
+  --font-mono:
+    ui-monospace, 'SF Mono', 'Cascadia Mono', Menlo, Consolas, 'Liberation Mono',
+    'PingFang SC', 'Microsoft YaHei', monospace;
 
-  /* 品牌色 */
-  --color-primary: #0d9488;
-  --color-primary-strong: #0f766e;
-  --color-primary-soft: #ccfbf1;
-  --color-accent: #ea580c;
-  --color-accent-soft: #ffedd5;
+  /* JSON 内容区字号（MASTER.md Typography） */
+  --text-json: 15px;
+  --text-json--line-height: 26px;
 
-  /* 语义表面 */
-  --color-surface: #f0fdfa;
+  /* 中性灰阶表面 */
+  --color-background: #ffffff;
+  --color-foreground: #0a0a0a;
   --color-card: #ffffff;
-  --color-ink: #134e4a;
-  --color-ink-muted: #64748b;
-  --color-line: #99f6e4;
+  --color-card-foreground: #0a0a0a;
+  --color-primary: #171717;
+  --color-on-primary: #fafafa;
+  --color-secondary: #f5f5f5;
+  --color-muted: #ebebeb;
+  --color-muted-foreground: #737373;
 
-  --radius-card: 1rem;
-  --shadow-card:
-    0 1px 2px rgb(15 60 55 / 0.05), 0 10px 30px rgb(15 60 55 / 0.06);
+  /*
+   * teal 唯一强调色（激活态底色用 50% 透明 teal）。light 下加深到 #007079
+   * （dark 保持共识色 #008c96）：#008c96 对白底小字对比 4.04:1 < 4.5，
+   * 加深后 5.84:1，小号 teal 文字无需逐处绕开
+   */
+  --color-accent: #007079;
+  --color-accent-50: #007079bf;
+
+  /* 边框 / 输入 / 焦点 */
+  --color-border: #e5e5e5;
+  --color-border-hover: #aeaeae;
+  --color-input-bg: #f2f2f2;
+  --color-input-border: #d4d4d4;
+  --color-destructive: #e40014;
+  --color-ring: #a1a1a1;
+
+  /* JSON 语法四色 + 搜索高亮（MASTER.md「JSON / Code Syntax Colors」） */
+  --color-json-string: #147900;
+  --color-json-number: #bd6700;
+  --color-json-boolean: #8059bb;
+  --color-json-null: #cc243d;
+  --color-json-match-bg: #f8dc90;
+  --color-json-match-text: #161616;
+  --color-json-editor-highlight: #0000001f;
+
+  /* 圆角：控件 8px（Tailwind 默认 rounded-lg 即 8px），面板/卡片/模态 10px */
+  --radius-panel: 10px;
 }
 
 .dark {
-  --color-primary: #2dd4bf;
-  --color-primary-strong: #5eead4;
-  --color-primary-soft: #134e4a;
-  --color-accent: #fb923c;
-  --color-accent-soft: #431407;
-  --color-surface: #0c161e;
-  --color-card: #122028;
-  --color-ink: #e6edf3;
-  --color-ink-muted: #94a3b8;
-  --color-line: #233644;
+  --color-background: #0a0a0a;
+  --color-foreground: #fafafa;
+  --color-card: #0a0a0a;
+  --color-card-foreground: #fafafa;
+  --color-primary: #fafafa;
+  --color-on-primary: #171717;
+  --color-secondary: #262626;
+  --color-muted: #262626;
+  --color-muted-foreground: #a1a1a1;
+
+  --color-accent: #008c96;
+  --color-accent-50: #008c9680;
+
+  --color-border: #292929;
+  --color-border-hover: #5d5d5d;
+  --color-input-bg: #262626;
+  --color-input-border: #383838;
+  --color-destructive: #fb2c36;
+  --color-ring: #525252;
+
+  --color-json-string: #68b457;
+  --color-json-number: #d0750a;
+  --color-json-boolean: #ad87ed;
+  --color-json-null: #f04c5a;
+  --color-json-match-bg: #5a4500;
+  --color-json-match-text: #eeeeee;
+  --color-json-editor-highlight: #ffffff1f;
 }
 
 @layer base {
@@ -52,10 +96,43 @@
   }
 
   body {
-    background-color: var(--color-surface);
-    color: var(--color-ink);
-    font-family: var(--font-sans);
+    background-color: var(--color-background);
+    color: var(--color-foreground);
   }
+}
+
+/*
+ * 全局等宽字体必须用非 layer 规则：NConfigProvider 根元素自带的
+ * v-sans 栈与 @layer base 的 body 规则同优先级且后注入，会赢；
+ * fontFamily 走 themeOverrides 实测对部分组件也不生效。
+ */
+body,
+.n-config-provider {
+  font-family: var(--font-mono);
+}
+
+/* 键盘焦点可见（WCAG 2.4.7）：--color-ring 只服务焦点环，鼠标点击不触发 */
+:where(a, button, input, select, textarea, [tabindex]):focus-visible {
+  outline: 2px solid var(--color-ring);
+  outline-offset: 2px;
+}
+
+/* 细滚动条随主题灰阶（Firefox + WebKit），替代 UA 默认的宽灰条 */
+* {
+  scrollbar-width: thin;
+  scrollbar-color: var(--color-border-hover) transparent;
+}
+::-webkit-scrollbar {
+  width: 8px;
+  height: 8px;
+}
+::-webkit-scrollbar-thumb {
+  background: var(--color-border-hover);
+  border-radius: 4px;
+}
+::-webkit-scrollbar-track,
+::-webkit-scrollbar-corner {
+  background: transparent;
 }
 
 /* 遵循系统减少动态效果偏好 */

@@ -28,11 +28,11 @@ const pendingSize = computed(() =>
     @update:show="store.cancelPendingLoad()"
   >
     <div class="flex flex-col gap-3 text-sm">
-      <p class="text-ink-muted">当前编辑器内容将被替换（可撤销，⌘Z 恢复）。</p>
-      <div class="rounded bg-primary-soft/30 p-2">
-        <div class="text-xs text-ink-muted">载入来源</div>
+      <p class="text-muted-foreground">当前编辑器内容将被替换（可撤销，⌘Z 恢复）。</p>
+      <div class="rounded bg-muted p-2">
+        <div class="text-xs text-muted-foreground">载入来源</div>
         <div class="break-all font-mono text-xs">{{ pending?.label }}</div>
-        <div class="mt-1 text-xs text-ink-muted">内容大小：{{ pendingSize }}</div>
+        <div class="mt-1 text-xs text-muted-foreground">内容大小：{{ pendingSize }}</div>
       </div>
       <div class="flex justify-end gap-2">
         <NButton size="small" @click="store.cancelPendingLoad()">取消</NButton>

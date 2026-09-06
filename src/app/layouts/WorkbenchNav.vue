@@ -11,9 +11,9 @@ const tools = listTools()
 const theme = useThemeStore()
 
 const itemBase =
-  'flex cursor-pointer items-center gap-3 rounded-lg px-3 py-2 text-sm transition-colors duration-200'
-const itemIdle = 'text-ink-muted hover:bg-primary-soft/50 hover:text-ink'
-const itemActive = 'bg-primary-soft font-medium text-primary-strong'
+  'flex cursor-pointer items-center gap-3 rounded-lg px-3 py-2 text-sm transition-colors duration-150'
+const itemIdle = 'text-muted-foreground hover:bg-muted hover:text-foreground'
+const itemActive = 'bg-accent-50 font-medium text-foreground'
 
 function isToolActive(toolId: string): boolean {
   return route.name === 'tool' && route.params.toolId === toolId
@@ -29,14 +29,14 @@ function isToolActive(toolId: string): boolean {
     >
       <svg width="28" height="28" viewBox="0 0 32 32" aria-hidden="true">
         <rect width="32" height="32" rx="8" fill="var(--color-primary)" />
-        <circle cx="11" cy="11" r="3.2" fill="white" />
-        <circle cx="21" cy="11" r="3.2" fill="white" />
-        <circle cx="11" cy="21" r="3.2" fill="white" />
+        <circle cx="11" cy="11" r="3.2" fill="var(--color-on-primary)" />
+        <circle cx="21" cy="11" r="3.2" fill="var(--color-on-primary)" />
+        <circle cx="11" cy="21" r="3.2" fill="var(--color-on-primary)" />
         <circle cx="21" cy="21" r="3.2" fill="var(--color-accent)" />
       </svg>
       <span class="flex flex-col leading-tight">
-        <span class="text-base font-semibold tracking-tight">工具台</span>
-        <span class="text-[11px] text-ink-muted">ToolWorkbench</span>
+        <span class="text-base font-medium tracking-tight">工具台</span>
+        <span class="text-xs text-muted-foreground">ToolWorkbench</span>
       </span>
     </RouterLink>
 
@@ -46,9 +46,7 @@ function isToolActive(toolId: string): boolean {
         首页
       </RouterLink>
 
-      <p
-        class="px-3 pt-5 pb-1 text-[11px] font-medium tracking-widest text-ink-muted/80 uppercase"
-      >
+      <p class="px-3 pt-5 pb-1 text-xs text-muted-foreground">
         工具
       </p>
       <RouterLink
@@ -74,7 +72,7 @@ function isToolActive(toolId: string): boolean {
         </NIcon>
         {{ theme.dark ? '浅色模式' : '深色模式' }}
       </button>
-      <p class="px-3 pt-3 text-[11px] leading-relaxed text-ink-muted/70">
+      <p class="px-3 pt-3 text-xs leading-relaxed text-muted-foreground">
         本地运行 · 数据仅存于浏览器
       </p>
     </div>

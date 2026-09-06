@@ -45,11 +45,11 @@ const statusMark = computed(() => {
 const rowClass = computed(() => {
   switch (props.node.status) {
     case 'added':
-      return 'bg-emerald-500/10 text-emerald-700 dark:text-emerald-400'
+      return 'bg-accent/10 text-accent'
     case 'removed':
-      return 'bg-red-500/10 text-red-600 line-through decoration-red-400/70 dark:text-red-400'
+      return 'bg-destructive/10 text-destructive line-through decoration-destructive/70'
     case 'changed':
-      return 'bg-amber-500/10 text-amber-700 dark:text-amber-400'
+      return 'bg-json-number/10 text-json-number'
     default:
       return ''
   }
@@ -68,16 +68,16 @@ function preview(value: unknown): string {
 </script>
 
 <template>
-  <div class="diff-node font-mono text-[13px] leading-6">
+  <div class="diff-node font-mono text-json">
     <div
-      class="group flex items-start gap-1 rounded px-1 hover:bg-primary-soft/40"
+      class="group flex items-start gap-1 rounded px-1 hover:bg-muted"
       :class="rowClass"
       :style="{ paddingLeft: `${depth * 14 + 2}px` }"
     >
       <button
         v-if="hasChildren"
         type="button"
-        class="mt-0.5 shrink-0 cursor-pointer rounded p-0.5 text-ink-muted hover:text-ink"
+        class="mt-0.5 shrink-0 cursor-pointer rounded p-0.5 text-muted-foreground hover:text-foreground"
         :aria-label="open ? '折叠' : '展开'"
         @click="open = !open"
       >
@@ -95,26 +95,26 @@ function preview(value: unknown): string {
       <span v-else class="w-4 shrink-0" />
 
       <div class="min-w-0 flex-1 break-all">
-        <span v-if="depth === 0" class="text-ink-muted">(根)</span>
+        <span v-if="depth === 0" class="text-muted-foreground">(根)</span>
         <template v-else>
-          <span class="text-primary-strong">"{{ node.key }}"</span>
-          <span class="text-ink-muted">:&nbsp;</span>
+          <span class="font-medium text-foreground">"{{ node.key }}"</span>
+          <span class="text-muted-foreground">:&nbsp;</span>
         </template>
 
         <template v-if="hasChildren && open">
-          <span class="text-ink-muted">{{ node.leftType !== null || node.rightType !== null ? '' : Array.isArray(node.left) ? '[' : '{' }}</span>
+          <span class="text-muted-foreground">{{ node.leftType !== null || node.rightType !== null ? '' : Array.isArray(node.left) ? '[' : '{' }}</span>
         </template>
         <template v-else-if="hasChildren">
-          <span class="text-ink-muted">{{ Array.isArray(node.left) || Array.isArray(node.right) ? '[…]' : '{…}' }}</span>
+          <span class="text-muted-foreground">{{ Array.isArray(node.left) || Array.isArray(node.right) ? '[…]' : '{…}' }}</span>
         </template>
         <template v-else-if="node.typeChanged">
-          <span class="text-ink-muted">{{ kindLeft }} → </span>
+          <span class="text-muted-foreground">{{ kindLeft }} → </span>
           <span>{{ preview(node.right) }}</span>
-          <span class="ml-1 text-xs text-ink-muted">（{{ kindLeft }} 改为 {{ kindRight }}）</span>
+          <span class="ml-1 text-xs text-muted-foreground">（{{ kindLeft }} 改为 {{ kindRight }}）</span>
         </template>
         <template v-else>
           <span>{{ preview(node.status === 'removed' ? node.left : node.right) }}</span>
-          <span v-if="node.status === 'changed'" class="ml-1 text-xs text-ink-muted" :title="preview(node.left)">
+          <span v-if="node.status === 'changed'" class="ml-1 text-xs text-muted-foreground" :title="preview(node.left)">
             原值：{{ preview(node.left) }}
           </span>
         </template>
@@ -124,7 +124,7 @@ function preview(value: unknown): string {
     <template v-if="hasChildren && open">
       <DiffTree v-for="child in node.children" :key="child.key" :node="child" :depth="depth + 1" />
       <div
-        class="text-ink-muted"
+        class="text-muted-foreground"
         :style="{ paddingLeft: `${depth * 14 + 2}px` }"
       >
         {{ Array.isArray(node.left) ? ']' : '}' }}

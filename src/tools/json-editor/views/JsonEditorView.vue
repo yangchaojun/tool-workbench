@@ -167,8 +167,8 @@ function pickFile() {
 <template>
   <section>
     <header class="mb-6">
-      <h1 class="text-2xl font-semibold tracking-tight">JSON 编辑器</h1>
-      <p class="mt-1 text-sm text-ink-muted">
+      <h1 class="text-2xl font-medium tracking-tight">JSON 编辑器</h1>
+      <p class="mt-1 text-sm text-muted-foreground">
         粘贴或上传 JSON：格式化 / 压缩、精确定位与容错修复、树形增删改与排序、查找替换、查询与 Diff 对比、文档历史与远程加载。
         数据默认不出浏览器；仅「历史」面板中的远程加载（URL 拉取）会在你点击时发起一次网络请求。
       </p>
@@ -252,25 +252,25 @@ function pickFile() {
     <div class="mb-3 flex min-h-6 flex-wrap items-center gap-x-3 gap-y-1 text-sm">
       <span
         :class="{
-          'font-medium text-red-600 dark:text-red-400': status.kind === 'error',
-          'font-medium text-emerald-600 dark:text-emerald-400': status.kind === 'ok',
-          'text-ink-muted': status.kind === 'muted',
+          'font-medium text-destructive': status.kind === 'error',
+          'font-medium text-accent': status.kind === 'ok',
+          'text-muted-foreground': status.kind === 'muted',
         }"
       >
         {{ status.text }}
       </span>
-      <span v-if="status.kind === 'ok'" class="text-ink-muted">
+      <span v-if="status.kind === 'ok'" class="text-muted-foreground">
         {{ formatBytes(store.byteSize) }}
       </span>
-      <span v-if="processError !== null" class="font-medium text-red-600 dark:text-red-400">
+      <span v-if="processError !== null" class="font-medium text-destructive">
         {{ processError }}
       </span>
-      <span v-if="store.mode === 'edit' && store.dataStale" class="text-ink-muted">
+      <span v-if="store.mode === 'edit' && store.dataStale" class="text-muted-foreground">
         · 树形视图与最新文本不同步，重新校验通过后自动恢复
       </span>
       <!-- 超软上限：无论当前结果是 ok / error / 无结果，都保持手动校验入口 -->
       <template v-if="store.overSoftCap && store.input !== ''">
-        <span class="text-ink-muted">· 已超过 1MB，自动校验暂停</span>
+        <span class="text-muted-foreground">· 已超过 1MB，自动校验暂停</span>
         <NButton size="tiny" type="primary" secondary @click="store.validate()">
           立即校验
         </NButton>

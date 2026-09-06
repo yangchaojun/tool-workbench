@@ -20,7 +20,7 @@ watch(
 <template>
   <component :is="view" v-if="view" />
   <section v-else class="py-16 text-center">
-    <p class="text-sm text-ink-muted">没有找到工具「{{ toolId }}」。</p>
-    <p class="mt-1 text-xs text-ink-muted/70">请检查链接，或回到首页查看可用工具。</p>
+    <p class="text-sm text-muted-foreground">没有找到工具「{{ toolId }}」。</p>
+    <p class="mt-1 text-xs text-muted-foreground/70">请检查链接，或回到首页查看可用工具。</p>
   </section>
 </template>

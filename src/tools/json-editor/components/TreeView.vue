@@ -56,18 +56,18 @@ onBeforeUnmount(() => setScrollToHandler(null))
 <template>
   <div class="flex h-full min-h-0 flex-col">
     <div class="mb-2 flex shrink-0 items-center justify-between gap-2">
-      <span class="truncate text-xs text-ink-muted">根：{{ rootSummary }}</span>
+      <span class="truncate text-xs text-muted-foreground">根：{{ rootSummary }}</span>
       <div class="flex shrink-0 items-center gap-1">
         <button
           type="button"
-          class="rounded px-1.5 py-0.5 text-xs text-ink-muted transition-colors hover:text-ink"
+          class="rounded px-1.5 py-0.5 text-xs text-muted-foreground transition-colors duration-150 hover:text-foreground"
           @click="expandAll(store.data)"
         >
           全部展开
         </button>
         <button
           type="button"
-          class="rounded px-1.5 py-0.5 text-xs text-ink-muted transition-colors hover:text-ink"
+          class="rounded px-1.5 py-0.5 text-xs text-muted-foreground transition-colors duration-150 hover:text-foreground"
           @click="collapseAll()"
         >
           全部折叠
@@ -76,7 +76,7 @@ onBeforeUnmount(() => setScrollToHandler(null))
     </div>
     <div
       v-if="store.treeEditReadonly"
-      class="mb-2 shrink-0 rounded bg-primary-soft/40 px-2 py-1 text-xs text-ink-muted"
+      class="mb-2 shrink-0 rounded bg-muted px-2 py-1 text-xs text-foreground"
     >
       文档较大，树形编辑已降级为只读（可在文本视图中修改）
     </div>
@@ -84,21 +84,21 @@ onBeforeUnmount(() => setScrollToHandler(null))
     <NVirtualList
       ref="virtualListRef"
       :items="rows"
-      :item-size="24"
+      :item-size="26"
       item-resizable
       class="min-h-0 flex-1"
     >
       <template #default="{ item }">
         <div
           v-if="item.type === 'close'"
-          class="font-mono text-[13px] leading-6 text-ink-muted"
+          class="font-mono text-json text-muted-foreground"
           :style="{ paddingLeft: `${item.depth * 14 + 2}px` }"
         >
           {{ item.name }}
         </div>
         <div
           v-else-if="item.type === 'empty'"
-          class="font-mono text-[13px] italic leading-6 text-ink-muted"
+          class="font-mono text-json italic text-muted-foreground"
           :style="{ paddingLeft: `${item.depth * 14 + 34}px` }"
         >
           {{ item.name }}

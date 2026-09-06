@@ -23,10 +23,10 @@ const inputProps = { onKeydown: onInputKeydown }
 </script>
 
 <template>
-  <section class="rounded-card border border-line/60 bg-card p-5 shadow-card">
+  <section class="rounded-panel border border-border bg-card p-5">
     <div class="mb-4 flex items-center justify-between">
       <h2 class="text-[15px] font-medium">任务</h2>
-      <span class="text-xs text-ink-muted">
+      <span class="text-xs text-muted-foreground">
         {{ store.tasks.filter((t) => !t.done).length }} 个待完成
       </span>
     </div>
@@ -64,11 +64,11 @@ const inputProps = { onKeydown: onInputKeydown }
       <li
         v-for="task in store.tasks"
         :key="task.id"
-        class="group flex items-center gap-2 rounded-lg px-2 py-2 transition-colors duration-200"
+        class="group flex items-center gap-2 rounded-lg px-2 py-2 transition-colors duration-150"
         :class="
           task.id === store.runtime.activeTaskId
-            ? 'bg-accent-soft/60 ring-1 ring-accent/40'
-            : 'hover:bg-primary-soft/40'
+            ? 'bg-accent-50'
+            : 'hover:bg-muted'
         "
       >
         <NCheckbox
@@ -84,16 +84,16 @@ const inputProps = { onKeydown: onInputKeydown }
         >
           <span
             class="block truncate text-sm"
-            :class="task.done ? 'text-ink-muted line-through' : ''"
+            :class="task.done ? 'text-muted-foreground line-through' : ''"
           >
             {{ task.title }}
           </span>
         </button>
-        <div class="flex shrink-0 items-center text-xs text-ink-muted">
+        <div class="flex shrink-0 items-center text-xs text-muted-foreground">
           <button
             type="button"
             aria-label="减少预估番茄数"
-            class="cursor-pointer rounded px-1 leading-none transition-colors hover:text-ink disabled:cursor-not-allowed disabled:opacity-40"
+            class="cursor-pointer rounded px-1 leading-none transition-colors duration-150 hover:text-foreground disabled:cursor-not-allowed disabled:opacity-40"
             :disabled="task.estimatedPomodoros <= 1"
             @click="store.changeEstimate(task.id, -1)"
           >
@@ -108,7 +108,7 @@ const inputProps = { onKeydown: onInputKeydown }
           <button
             type="button"
             aria-label="增加预估番茄数"
-            class="cursor-pointer rounded px-1 leading-none transition-colors hover:text-ink disabled:cursor-not-allowed disabled:opacity-40"
+            class="cursor-pointer rounded px-1 leading-none transition-colors duration-150 hover:text-foreground disabled:cursor-not-allowed disabled:opacity-40"
             :disabled="task.estimatedPomodoros >= 20"
             @click="store.changeEstimate(task.id, 1)"
           >
@@ -130,7 +130,7 @@ const inputProps = { onKeydown: onInputKeydown }
       </li>
     </ul>
 
-    <p v-if="store.tasks.some((t) => !t.done)" class="mt-3 text-xs text-ink-muted/80">
+    <p v-if="store.tasks.some((t) => !t.done)" class="mt-3 text-xs text-muted-foreground/80">
       点击任务设为当前专注对象，完成的番茄会自动计入。
     </p>
   </section>
