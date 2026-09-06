@@ -1,6 +1,15 @@
 <script setup lang="ts">
 import { computed, nextTick, onBeforeUnmount, onMounted, ref, watch } from 'vue'
-import { NButton, NDropdown, NIcon, NRadioButton, NRadioGroup, NTabPane, NTabs } from 'naive-ui'
+import {
+  NButton,
+  NDropdown,
+  NIcon,
+  NPopover,
+  NRadioButton,
+  NRadioGroup,
+  NTabPane,
+  NTabs,
+} from 'naive-ui'
 import {
   CloudUploadOutline,
   CopyOutline,
@@ -9,6 +18,7 @@ import {
   ArrowUndoOutline,
   ArrowRedoOutline,
   BuildOutline,
+  TimeOutline,
 } from '@vicons/ionicons5'
 
 import { formatBytes, useJsonEditorStore } from '../stores/jsonEditor'
@@ -17,6 +27,8 @@ import { repairJson } from '../parser/repair'
 import EditorPane from '../components/EditorPane.vue'
 import TreePane from '../components/TreePane.vue'
 import RepairModal from '../components/RepairModal.vue'
+import HistoryPanel from '../components/HistoryPanel.vue'
+import LoadConfirmModal from '../components/LoadConfirmModal.vue'
 import DiffView from './DiffView.vue'
 
 const store = useJsonEditorStore()
@@ -49,8 +61,8 @@ const paneHeightClass = 'h-[560px] min-h-[420px] xl:h-[calc(100vh-360px)]'
 // ── 状态栏 ─────────────────────────────────────────────────────
 
 const status = computed(() => {
-  if (store.uploadError !== null) {
-    return { kind: 'error', text: store.uploadError } as const
+  if (store.loadError !== null) {
+    return { kind: 'error', text: store.loadError } as const
   }
   const r = store.result
   if (r === null) {
@@ -157,7 +169,8 @@ function pickFile() {
     <header class="mb-6">
       <h1 class="text-2xl font-semibold tracking-tight">JSON 编辑器</h1>
       <p class="mt-1 text-sm text-ink-muted">
-        粘贴或上传 JSON：格式化 / 压缩、精确定位与容错修复、树形增删改与排序、查找替换、查询与 Diff 对比。数据不出浏览器。
+        粘贴或上传 JSON：格式化 / 压缩、精确定位与容错修复、树形增删改与排序、查找替换、查询与 Diff 对比、文档历史与远程加载。
+        数据默认不出浏览器；仅「历史」面板中的远程加载（URL 拉取）会在你点击时发起一次网络请求。
       </p>
     </header>
 
@@ -176,6 +189,17 @@ function pickFile() {
           </template>
           上传
         </NButton>
+        <NPopover trigger="click" placement="bottom-end" :width="380">
+          <template #trigger>
+            <NButton size="small" secondary>
+              <template #icon>
+                <NIcon :size="16"><TimeOutline /></NIcon>
+              </template>
+              历史
+            </NButton>
+          </template>
+          <HistoryPanel />
+        </NPopover>
         <NButton size="small" type="primary" secondary :disabled="!store.hasData" @click="store.format()">
           格式化
         </NButton>
@@ -242,7 +266,7 @@ function pickFile() {
         {{ processError }}
       </span>
       <span v-if="store.mode === 'edit' && store.dataStale" class="text-ink-muted">
-        · 树形视图与最新数据不同步（见上方错误），修正后自动恢复
+        · 树形视图与最新文本不同步，重新校验通过后自动恢复
       </span>
       <!-- 超软上限：无论当前结果是 ok / error / 无结果，都保持手动校验入口 -->
       <template v-if="store.overSoftCap && store.input !== ''">
@@ -275,5 +299,6 @@ function pickFile() {
     </template>
 
     <RepairModal />
+    <LoadConfirmModal />
   </section>
 </template>

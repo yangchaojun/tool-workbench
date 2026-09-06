@@ -1,8 +1,18 @@
 <script setup lang="ts">
-import { computed, ref } from 'vue'
+import { computed, onBeforeUnmount, onMounted, ref } from 'vue'
+import { NVirtualList } from 'naive-ui'
+import type { VirtualListInst } from 'naive-ui'
 
-import TreeNode from './TreeNode.vue'
-import { collapseAll, expandAll } from './treeState'
+import TreeRow from './TreeRow.vue'
+import { flattenTree } from './treeRows'
+import {
+  expandAll,
+  collapseAll,
+  isExpanded,
+  pathKey,
+  setScrollToHandler,
+  expandVersion,
+} from './treeState'
 import { useJsonEditorStore } from '../stores/jsonEditor'
 import { jsonValueType, jsonValueTypeLabels } from './treeTypes'
 import type { JsonPath } from '../editor/mutations'
@@ -23,19 +33,24 @@ const rootSummary = computed(() => {
   return jsonValueTypeLabels[kind]
 })
 
-function onExpandAll() {
-  expandAll(store.data)
-  // 触发整树刷新展开态：数据引用未变，靠重新挂载刷新（用 toggle key 不可行，
-  // 直接遍历展开态即可——TreeNode 在展开态变化时通过自身 watch 同步）
-  forceRefresh.value += 1
-}
-const forceRefresh = ref(0)
+/**
+ * 可见行（含展开容器内的全部子行与闭合/空行）。
+ * 读 expandVersion：expandAll 写入的深层路径不在既有依赖内，需版本号兜底重算。
+ */
+const rows = computed(() => {
+  void expandVersion.value
+  return flattenTree(store.data, isExpanded)
+})
 
-function onCollapseAll() {
-  collapseAll()
-  forceRefresh.value += 1
-}
+const virtualListRef = ref<VirtualListInst | null>(null)
 
+/** 查找/查询/拖拽落位定位：展开态已就绪，按行索引滚动虚拟列表 */
+function handleScrollTo(path: JsonPath) {
+  const index = rows.value.findIndex((r) => r.type === 'node' && r.key === pathKey(path))
+  if (index >= 0) virtualListRef.value?.scrollTo({ index })
+}
+onMounted(() => setScrollToHandler(handleScrollTo))
+onBeforeUnmount(() => setScrollToHandler(null))
 </script>
 
 <template>
@@ -46,29 +61,50 @@ function onCollapseAll() {
         <button
           type="button"
           class="rounded px-1.5 py-0.5 text-xs text-ink-muted transition-colors hover:text-ink"
-          @click="onExpandAll"
+          @click="expandAll(store.data)"
         >
           全部展开
         </button>
         <button
           type="button"
           class="rounded px-1.5 py-0.5 text-xs text-ink-muted transition-colors hover:text-ink"
-          @click="onCollapseAll"
+          @click="collapseAll()"
         >
           全部折叠
         </button>
       </div>
     </div>
-    <div data-tree-scroll class="min-h-0 flex-1 overflow-auto pr-1">
-      <TreeNode
-        :key="`root-${forceRefresh}`"
-        name="(根)"
-        :path="[]"
-        :value="store.data"
-        :depth="0"
-        :parent-is-array="false"
-        :highlight="highlight"
-      />
+    <div
+      v-if="store.treeEditReadonly"
+      class="mb-2 shrink-0 rounded bg-primary-soft/40 px-2 py-1 text-xs text-ink-muted"
+    >
+      文档较大，树形编辑已降级为只读（可在文本视图中修改）
     </div>
+    <!-- 渲染层虚拟滚动（ADR-0005）：一次性完整解析的数据源不变，只渲染视口内节点 -->
+    <NVirtualList
+      ref="virtualListRef"
+      :items="rows"
+      :item-size="24"
+      item-resizable
+      class="min-h-0 flex-1"
+    >
+      <template #default="{ item }">
+        <div
+          v-if="item.type === 'close'"
+          class="font-mono text-[13px] leading-6 text-ink-muted"
+          :style="{ paddingLeft: `${item.depth * 14 + 2}px` }"
+        >
+          {{ item.name }}
+        </div>
+        <div
+          v-else-if="item.type === 'empty'"
+          class="font-mono text-[13px] italic leading-6 text-ink-muted"
+          :style="{ paddingLeft: `${item.depth * 14 + 34}px` }"
+        >
+          {{ item.name }}
+        </div>
+        <TreeRow v-else :row="item" :highlight="highlight" />
+      </template>
+    </NVirtualList>
   </div>
 </template>

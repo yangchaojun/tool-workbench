@@ -1,9 +1,4 @@
-/** 树形视图的类型判定、标签与渲染护栏（docs 见 issues/tickets/011） */
-
-/** 渲染护栏：无虚拟滚动下的过载保护；超出部分可点「显示全部」展开 */
-export const CHILDREN_RENDER_CAP = 200
-/** 深度护栏：超过即渲染为「停止展开」的叶子 */
-export const DEPTH_RENDER_CAP = 200
+/** 树形视图的类型判定与标签（渲染护栏已被虚拟滚动取代，见 ADR-0005） */
 
 export type JsonValueType =
   | 'object'

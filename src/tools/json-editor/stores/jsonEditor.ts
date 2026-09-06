@@ -7,6 +7,16 @@ import { locateJsonError } from '../parser/locate'
 import type { JsonErrorLocation } from '../parser/locate'
 import type { RepairFix } from '../parser/repair'
 import { jsonEditorPersistSchema } from '../schemas'
+import {
+  clearDocumentHistoryStorage,
+  loadDocumentHistory,
+  displayName,
+  recordDocument,
+  removeDocument,
+  saveDocumentHistory,
+  type DocumentHistoryEntry,
+  type DocumentKind,
+} from '../document/documentHistory'
 import { HistoryStack, type EditorSnapshot } from '../editor/history'
 import {
   getAtPath,
@@ -26,7 +36,13 @@ const LEGACY_PERSIST_KEY = 'tw:json-viewer:input'
 // 软上限：超出即警告、暂停自动行为，但不阻止使用（见 CONTEXT.md「软上限」）
 const SOFT_CAP_BYTES = 1024 * 1024
 const PERSIST_CAP_BYTES = 256 * 1024
-export const UPLOAD_CAP_BYTES = 5 * 1024 * 1024
+export const UPLOAD_CAP_BYTES = 20 * 1024 * 1024
+/**
+ * 树编辑降级阈值（ADR-0005 Consequences）：超过后树形编辑降级为只读。
+ * 依实测定值——全量重序列化（2 空格 JSON.stringify，树编辑每次 O(n) 成本）：
+ * 8MB ≈ 28ms、12MB ≈ 44ms、20MB ≈ 72ms（M 系列芯片参考机），8MB 为响应性上限。
+ */
+const TREE_EDIT_MAX_BYTES = 8 * 1024 * 1024
 const AUTO_VALIDATE_DEBOUNCE_MS = 300
 
 export type JsonParseResult =
@@ -36,6 +52,13 @@ export type JsonParseResult =
 export type OutputMode = 'format' | 'minify'
 /** 顶层模式：编辑 / 对比 */
 export type ToolMode = 'edit' | 'diff'
+
+/** 文档历史条目的来源元信息（记录与恢复共用） */
+export interface LoadMeta {
+  kind: DocumentKind
+  name: string | null
+  url: string | null
+}
 
 const byteEncoder = new TextEncoder()
 
@@ -72,10 +95,23 @@ export const useJsonEditorStore = defineStore('json-editor', () => {
   const dataStale = ref(false)
   const mode = ref<ToolMode>('edit')
   const outputMode = ref<OutputMode>('format')
-  const uploadError = ref<string | null>(null)
+  /** 载入类错误（上传读取 / URL 拉取 / 响应非法），状态栏展示 */
+  const loadError = ref<string | null>(null)
   const copied = ref(false)
   /** 修复预览的待应用候选（RepairModal 消费）；null 表示无进行中的修复 */
   const repairCandidate = ref<{ text: string; fixes: RepairFix[] } | null>(null)
+  /** URL 拉取进行中（历史面板加载按钮的 loading 态） */
+  const loadingUrl = ref(false)
+  /**
+   * 文档历史（CONTEXT.md「文档历史」，与统一历史栈无关）：
+   * 仅显式载入动作自动记录，手动粘贴经显式保存记录。
+   */
+  const docHistory = ref<DocumentHistoryEntry[]>(loadDocumentHistory())
+  /**
+   * 统一载入确认门：当前输入非空且与目标内容不同时挂起，待用户确认覆盖。
+   * 上传、URL 拉取、文档历史恢复共用（CONTEXT.md「输入」：处理动作需用户确认才改写）。
+   */
+  const pendingLoad = ref<{ text: string; label: string; meta: LoadMeta } | null>(null)
 
   const history = new HistoryStack()
   const historyVersion = ref(0)
@@ -98,6 +134,8 @@ export const useJsonEditorStore = defineStore('json-editor', () => {
   const byteSize = computed(() => byteEncoder.encode(input.value).length)
   const overSoftCap = computed(() => byteSize.value > SOFT_CAP_BYTES)
   const hasData = computed(() => data.value !== undefined && !dataStale.value)
+  /** 树编辑降级：超过阈值时树形编辑只读（ADR-0005，阈值实测见常量注释） */
+  const treeEditReadonly = computed(() => byteSize.value > TREE_EDIT_MAX_BYTES)
 
   const formatted = computed<string | null>(() =>
     data.value === undefined ? null : JSON.stringify(data.value, null, 2),
@@ -143,10 +181,14 @@ export const useJsonEditorStore = defineStore('json-editor', () => {
     if (debounceTimer !== null) window.clearTimeout(debounceTimer)
     debounceTimer = window.setTimeout(() => {
       debounceTimer = null
-      // 超软上限：自动校验暂停（防每键全量重解析），等手动触发
+      // 超软上限：自动校验暂停（防每键全量重解析），等手动触发；
+      // 数据源已落后于文本时树暂停同步（编辑动作被守卫拦下），避免基于旧数据改写新文本。
+      // 显式载入走 applyTextTransform 的强制校验，不经过此分支。
       if (!overSoftCap.value) {
         commitTextInput()
         validate()
+      } else if (input.value !== lastSettled.text) {
+        dataStale.value = data.value !== undefined
       }
       persist()
     }, AUTO_VALIDATE_DEBOUNCE_MS)
@@ -227,7 +269,7 @@ export const useJsonEditorStore = defineStore('json-editor', () => {
   // ── 树形编辑动作（不可变操作，见 editor/mutations）──────────────
 
   function editNode(path: JsonPath, value: unknown): boolean {
-    if (!hasData.value) return false
+    if (!hasData.value || treeEditReadonly.value) return false
     const next = setAtPath(data.value, path, value)
     if (next === data.value) return false
     afterDataChange(next, lastSettled.text, lastSettled.data)
@@ -245,7 +287,7 @@ export const useJsonEditorStore = defineStore('json-editor', () => {
     value: unknown,
     changeValue: boolean,
   ): boolean {
-    if (!hasData.value) return false
+    if (!hasData.value || treeEditReadonly.value) return false
     if (newKey !== null) {
       const renamed = renameKey(data.value, path, newKey)
       if (renamed === null) return false
@@ -262,14 +304,14 @@ export const useJsonEditorStore = defineStore('json-editor', () => {
   }
 
   function removeNode(path: JsonPath): boolean {
-    if (!hasData.value || path.length === 0) return false
+    if (!hasData.value || treeEditReadonly.value || path.length === 0) return false
     const next = removeAtPath(data.value, path)
     afterDataChange(next, lastSettled.text, lastSettled.data)
     return true
   }
 
   function addObjectChild(parentPath: JsonPath, key: string, value: unknown): boolean {
-    if (!hasData.value) return false
+    if (!hasData.value || treeEditReadonly.value) return false
     const parent = getAtPath(data.value, parentPath)
     if (parent === null || typeof parent !== 'object' || Array.isArray(parent)) return false
     const next = setAtPath(data.value, [...parentPath, key], value)
@@ -278,7 +320,7 @@ export const useJsonEditorStore = defineStore('json-editor', () => {
   }
 
   function addArrayChild(parentPath: JsonPath, value: unknown): boolean {
-    if (!hasData.value) return false
+    if (!hasData.value || treeEditReadonly.value) return false
     const parent = getAtPath(data.value, parentPath)
     if (!Array.isArray(parent)) return false
     const next = setAtPath(data.value, [...parentPath, String(parent.length)], value)
@@ -287,7 +329,7 @@ export const useJsonEditorStore = defineStore('json-editor', () => {
   }
 
   function moveNodeAction(plan: Parameters<typeof moveNode>[1]): JsonPath | null {
-    if (!hasData.value) return null
+    if (!hasData.value || treeEditReadonly.value) return null
     const moved = moveNode(data.value, plan)
     if (moved === null) return null
     afterDataChange(moved.data, lastSettled.text, lastSettled.data)
@@ -295,7 +337,7 @@ export const useJsonEditorStore = defineStore('json-editor', () => {
   }
 
   function sortKeys(path: JsonPath, recursive: boolean): boolean {
-    if (!hasData.value) return false
+    if (!hasData.value || treeEditReadonly.value) return false
     const next = sortObjectKeys(data.value, path, recursive)
     if (next === data.value) return false
     afterDataChange(next, lastSettled.text, lastSettled.data)
@@ -310,12 +352,15 @@ export const useJsonEditorStore = defineStore('json-editor', () => {
 
   // ── 处理类动作（整段文本替换，入栈）────────────────────────────
 
-  /** 把整段文本替换为给定内容（转义/Unicode/修复确认/上传/清空共用） */
-  function applyTextTransform(text: string) {
+  /**
+   * 把整段文本替换为给定内容（转义/Unicode/修复确认/统一载入/清空共用）。
+   * forceValidate：显式载入必须让数据源跟上文本——软上限暂停的是键入路径的
+   * 自动校验（防每键全量重解析），不是载入路径的这一次性解析。
+   */
+  function applyTextTransform(text: string, forceValidate = false) {
     commitTextInput()
     input.value = text
-    // 写入后立即校验（超软上限时暂停自动校验，交由用户手动触发）
-    if (!overSoftCap.value) validate()
+    if (forceValidate || !overSoftCap.value) validate()
     markSettled()
     persist()
   }
@@ -376,22 +421,144 @@ export const useJsonEditorStore = defineStore('json-editor', () => {
     URL.revokeObjectURL(url)
   }
 
+  // ── 载入（上传 / URL / 历史恢复）：统一确认门 + 文档历史记录 ────
+
+  /** 把一次成功载入记入文档历史并持久化 */
+  function recordLoaded(meta: LoadMeta, text: string) {
+    docHistory.value = recordDocument(docHistory.value, {
+      kind: meta.kind,
+      name: meta.name,
+      url: meta.url,
+      content: text,
+      timestamp: Date.now(),
+    })
+    saveDocumentHistory(docHistory.value)
+  }
+
+  /**
+   * 载入入口：当前输入非空且与目标不同 → 挂起待确认；否则直接应用。
+   * 上传、URL 拉取、文档历史恢复共用同一确认逻辑。
+   * 返回「是否已实际载入」——挂起待确认（用户可能取消）不算。
+   */
+  function offerLoad(text: string, meta: LoadMeta, label: string): boolean {
+    if (input.value !== '' && input.value !== text) {
+      pendingLoad.value = { text, label, meta }
+      return false
+    }
+    applyLoaded(text, meta)
+    return true
+  }
+
+  function applyLoaded(text: string, meta: LoadMeta) {
+    pendingLoad.value = null
+    applyTextTransform(text, true)
+    recordLoaded(meta, text)
+  }
+
+  function confirmPendingLoad() {
+    if (pendingLoad.value === null) return
+    applyLoaded(pendingLoad.value.text, pendingLoad.value.meta)
+  }
+
+  function cancelPendingLoad() {
+    pendingLoad.value = null
+  }
+
+  /**
+   * 远程加载（CONTEXT.md）：用户点击触发的单次裸 GET——无自定义请求头、
+   * 无自动重试、无代理（ADR-0004）。响应体能 JSON.parse 即载入；
+   * 失败时区分「浏览器跨域/网络受限」与「内容非法」，如实提示。
+   */
+  async function loadUrl(rawUrl: string): Promise<boolean> {
+    const url = rawUrl.trim()
+    loadError.value = null
+    if (url === '') return false
+    loadingUrl.value = true
+    try {
+      const response = await fetch(url)
+      if (!response.ok) {
+        loadError.value = `加载失败：服务器返回 ${response.status}（${url}）`
+        return false
+      }
+      const text = await response.text()
+      try {
+        JSON.parse(text)
+      } catch (error) {
+        const location = locateJsonError(text)
+        loadError.value =
+          location !== null
+            ? `响应不是合法 JSON（第 ${location.line} 行 第 ${location.column} 列：${location.message}）`
+            : `响应不是合法 JSON：${error instanceof Error ? error.message : String(error)}`
+        return false
+      }
+      return offerLoad(text, { kind: 'url', name: null, url }, `远程 ${url}`)
+    } catch {
+      loadError.value =
+        '加载失败：浏览器跨域限制或网络不可达——可打开该 URL 复制响应内容后粘贴'
+      return false
+    } finally {
+      loadingUrl.value = false
+    }
+  }
+
   async function loadFile(file: File) {
-    uploadError.value = null
+    loadError.value = null
     if (file.size > UPLOAD_CAP_BYTES) {
-      uploadError.value = `文件过大（${formatBytes(file.size)}），上传上限 5MB`
+      loadError.value = `文件过大（${formatBytes(file.size)}），上传上限 ${formatBytes(UPLOAD_CAP_BYTES)}`
       return
     }
     try {
-      applyTextTransform(await file.text())
+      offerLoad(await file.text(), { kind: 'file', name: file.name, url: null }, `文件 ${file.name}`)
     } catch {
-      uploadError.value = `无法读取文件 ${file.name}`
+      loadError.value = `无法读取文件 ${file.name}`
     }
+  }
+
+  // ── 文档历史动作（命名避开统一历史栈：一律 docHistory 口径）──────
+
+  /** 显式保存当前输入到文档历史（手动粘贴不自动记录） */
+  function saveCurrentToDocHistory(): boolean {
+    if (input.value.trim() === '') return false
+    recordLoaded({ kind: 'paste', name: null, url: null }, input.value)
+    return true
+  }
+
+  /** 恢复条目：有缓存走确认门载入；URL 条目无缓存时重新拉取 */
+  function restoreFromDocHistory(id: string): boolean {
+    const entry = docHistory.value.find((e) => e.id === id)
+    if (entry === undefined) return false
+    if (entry.content !== null) {
+      offerLoad(entry.content, { kind: entry.kind, name: entry.name, url: entry.url }, displayName(entry))
+      return true
+    }
+    if (entry.kind === 'url' && entry.url !== null) {
+      void loadUrl(entry.url)
+      return true
+    }
+    return false
+  }
+
+  /** URL 条目的次级动作：无视缓存直接重新拉取 */
+  function refetchDocHistoryEntry(id: string): boolean {
+    const entry = docHistory.value.find((e) => e.id === id)
+    if (entry === undefined || entry.url === null) return false
+    void loadUrl(entry.url)
+    return true
+  }
+
+  function removeDocHistoryEntry(id: string) {
+    docHistory.value = removeDocument(docHistory.value, id)
+    saveDocumentHistory(docHistory.value)
+  }
+
+  function clearDocumentHistory() {
+    docHistory.value = []
+    clearDocumentHistoryStorage()
   }
 
   function clear() {
     applyTextTransform('')
-    uploadError.value = null
+    loadError.value = null
   }
 
   // 首次进入即呈现已恢复输入的校验结果
@@ -404,9 +571,13 @@ export const useJsonEditorStore = defineStore('json-editor', () => {
     dataStale,
     mode,
     outputMode,
-    uploadError,
+    loadError,
     copied,
     repairCandidate,
+    loadingUrl,
+    docHistory,
+    pendingLoad,
+    treeEditReadonly,
     canUndo,
     canRedo,
     byteSize,
@@ -432,6 +603,14 @@ export const useJsonEditorStore = defineStore('json-editor', () => {
     copyResult,
     download,
     loadFile,
+    loadUrl,
+    confirmPendingLoad,
+    cancelPendingLoad,
+    saveCurrentToDocHistory,
+    restoreFromDocHistory,
+    refetchDocHistoryEntry,
+    removeDocHistoryEntry,
+    clearDocumentHistory,
     clear,
   }
 })

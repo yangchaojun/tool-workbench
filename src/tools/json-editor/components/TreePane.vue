@@ -132,7 +132,7 @@ const highlight = computed<MutPath | null>(() =>
       v-else-if="store.dataStale"
       class="flex h-full items-center justify-center text-sm text-ink-muted"
     >
-      文本未通过校验，树形视图已暂停同步——修正错误后自动恢复
+      树形视图已暂停同步——文本重新通过校验后自动恢复
     </div>
     <div v-else class="flex h-full items-center justify-center text-sm text-ink-muted">
       解析成功后在此编辑数据：增删改节点、拖拽排序、按键名排序

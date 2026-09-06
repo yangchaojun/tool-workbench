@@ -84,7 +84,7 @@ async function onFile(event: Event, side: 'left' | 'right') {
   const errorRef = side === 'left' ? leftUploadError : rightUploadError
   errorRef.value = null
   if (file.size > UPLOAD_CAP_BYTES) {
-    errorRef.value = `文件过大（${formatBytes(file.size)}），上传上限 5MB`
+    errorRef.value = `文件过大（${formatBytes(file.size)}），上传上限 ${formatBytes(UPLOAD_CAP_BYTES)}`
     return
   }
   try {

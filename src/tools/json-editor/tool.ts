@@ -7,7 +7,7 @@ export const jsonEditorTool = defineTool({
     id: 'json-editor',
     name: 'JSON 编辑器',
     description:
-      '粘贴或上传 JSON：格式化/压缩、精确定位与容错修复、树形增删改与排序、查找替换、JSONPath/JMESPath 查询、双份数据 Diff 对比、转义与 Unicode 编解码，全程可撤销重做。',
+      '粘贴或上传 JSON（也可从 URL 载入）：格式化/压缩、精确定位与容错修复、树形增删改与排序、查找替换、JSONPath/JMESPath 查询、双份数据 Diff 对比、转义与 Unicode 编解码、跨会话文档历史，全程可撤销重做。',
     accent: '#4f46e5',
   },
   icon: CodeSlashOutline,
