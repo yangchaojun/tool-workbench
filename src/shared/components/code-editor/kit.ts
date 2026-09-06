@@ -99,18 +99,19 @@ const jsonHighlight = HighlightStyle.define([
   { tag: t.invalid, color: '#ef4444' },
 ])
 
-export function buildBaseExtensions(): Extension[] {
+export function buildBaseExtensions(withHistory = true): Extension[] {
   return [
     lineNumbers(),
     highlightActiveLineGutter(),
     highlightActiveLine(),
     drawSelection(),
     dropCursor(),
-    history(),
+    // 历史栈可关闭：工具侧用统一快照栈接管撤销/重做时避免双栈（见 ADR-0003）
+    ...(withHistory ? [history()] : []),
     errorMarkField,
     workbenchTheme,
     syntaxHighlighting(jsonHighlight),
-    keymap.of([...defaultKeymap, ...historyKeymap]),
+    keymap.of(withHistory ? [...defaultKeymap, ...historyKeymap] : [...defaultKeymap]),
   ]
 }
 

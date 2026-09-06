@@ -5,7 +5,7 @@
 当前集成工具：
 
 - **番茄任务钟** —— 专注 / 短休 / 长休三段循环、任务绑定预估番茄数、今日统计、浏览器通知与提示音、全屏专注模式（沉浸层 + 桌面端原生全屏，点击环面或空格键切换计时，运行中防息屏）。
-- **JSON 查看器** —— 粘贴或上传 JSON：格式化 / 压缩、语法校验并精确定位错误（跨浏览器一致的 行:列 + 中文原因）、语法高亮文本与可折叠树形双视图、一键复制 / 下载，输入跨刷新恢复。
+- **JSON 编辑器** —— 粘贴或上传 JSON：格式化 / 压缩、语法校验并精确定位错误、容错修复（预览确认）；树形视图直接增删改节点、拖拽排序与按键名排序；查找替换、JSONPath / JMESPath 查询提取、双份数据 Diff 对比、转义 / Unicode 编解码；全程可撤销重做。
 
 ## 快速开始
 
@@ -14,6 +14,7 @@ npm install
 npm run dev       # 开发（默认 http://localhost:5173）
 npm run build     # 类型检查（vue-tsc）+ 生产构建
 npm run preview   # 预览构建产物
+npm run test      # vitest 单测（纯逻辑层：修复器 / diff / 历史栈 / 查询封装等）
 ```
 
 ## 技术栈
@@ -47,7 +48,7 @@ src/
     │   ├── utils/           # audio（WebAudio 提示音）/ notify（浏览器通知）
     │   ├── views/           # 工具主视图
     │   └── components/      # 工具私有组件
-    └── json-viewer/         # JSON 查看器（parser/ 容错定位器，见 docs/adr/0002）
+    └── json-editor/         # JSON 编辑器（容错定位/修复 parser/、diff/、query/，见 ADR-0002/0003）
 ```
 
 关键设计：
