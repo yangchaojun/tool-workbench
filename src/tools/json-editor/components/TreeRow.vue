@@ -322,18 +322,27 @@ const previewTitle = computed(() =>
 const lengthLabel = computed(() =>
   props.row.isContainer ? `${props.row.childCount} 项` : '',
 )
+/** 值预览按 JSON 类型接四色语法 token（MASTER.md「JSON / Code Syntax Colors」） */
+const previewClass = computed(() => {
+  const v = props.row.value
+  if (typeof v === 'string') return 'text-json-string'
+  if (typeof v === 'number') return 'text-json-number'
+  if (typeof v === 'boolean') return 'text-json-boolean'
+  if (v === null) return 'text-json-null'
+  return ''
+})
 </script>
 
 <template>
   <div
     ref="rowEl"
-    class="tree-node group relative flex min-h-6 items-center gap-1 rounded px-1 py-0.5 font-mono text-[13px] leading-6 transition-colors"
+    class="tree-node group relative flex min-h-[26px] items-center gap-1 rounded px-1 py-0.5 font-mono text-json transition-colors"
     :class="{
-      'hover:bg-primary-soft/40': dropHint === null && !highlighted,
-      'bg-primary-soft/70': highlighted,
-      'ring-1 ring-primary': dropHint === 'inside',
-      'border-t-2 border-t-primary': dropHint === 'before',
-      'border-b-2 border-b-primary': dropHint === 'after',
+      'hover:bg-muted': dropHint === null && !highlighted,
+      'bg-accent-50': highlighted,
+      'ring-1 ring-accent': dropHint === 'inside',
+      'border-t-2 border-t-accent': dropHint === 'before',
+      'border-b-2 border-b-accent': dropHint === 'after',
     }"
     :style="{ paddingLeft: `${row.depth * 14 + 2}px` }"
     @dragover="onDragOver"
@@ -343,7 +352,7 @@ const lengthLabel = computed(() =>
     <button
       v-if="canExpand"
       type="button"
-      class="shrink-0 cursor-pointer rounded p-0.5 text-ink-muted transition-colors hover:text-ink"
+      class="grid size-6 shrink-0 cursor-pointer place-items-center rounded text-muted-foreground transition-colors duration-150 hover:text-foreground"
       :aria-expanded="row.open"
       :aria-label="row.open ? '折叠' : '展开'"
       @click="toggle"
@@ -353,13 +362,13 @@ const lengthLabel = computed(() =>
         <ChevronForwardOutline v-else />
       </NIcon>
     </button>
-    <span v-else class="inline-block w-[18px] shrink-0" />
+    <span v-else class="inline-block size-6 shrink-0" />
 
     <!-- 拖拽把手 -->
     <button
       v-if="row.path.length > 0 && !store.treeEditReadonly"
       type="button"
-      class="shrink-0 cursor-grab rounded p-0.5 text-ink-muted opacity-0 transition-opacity hover:text-ink group-hover:opacity-100"
+      class="grid size-6 shrink-0 cursor-grab place-items-center rounded text-muted-foreground opacity-0 transition-opacity hover:text-foreground group-hover:opacity-100 group-focus-within:opacity-100"
       aria-label="拖拽移动"
       draggable="true"
       @dragstart="onDragStart"
@@ -407,12 +416,12 @@ const lengthLabel = computed(() =>
         ]"
         @update:value="setEditBool"
       />
-      <span v-if="session.error !== null" class="text-xs text-red-600 dark:text-red-400">
+      <span v-if="session.error !== null" class="text-xs text-destructive">
         {{ session.error }}
       </span>
       <button
         type="button"
-        class="rounded p-1 text-emerald-600 hover:bg-primary-soft dark:text-emerald-400"
+        class="grid size-6 place-items-center rounded text-accent transition-colors duration-150 hover:bg-muted"
         aria-label="确认"
         @click="confirmEdit"
       >
@@ -420,7 +429,7 @@ const lengthLabel = computed(() =>
       </button>
       <button
         type="button"
-        class="rounded p-1 text-ink-muted hover:text-ink"
+        class="grid size-6 place-items-center rounded text-muted-foreground hover:text-foreground"
         aria-label="取消"
         @click="cancelEdit"
       >
@@ -430,30 +439,30 @@ const lengthLabel = computed(() =>
 
     <!-- 展示态 -->
     <div v-else class="min-w-0 flex-1 truncate">
-      <span v-if="row.parentIsArray" class="text-ink-muted">{{ row.name }}</span>
-      <span v-else class="text-primary-strong" :title="row.name">"{{ row.name }}"</span>
-      <span class="text-ink-muted">:&nbsp;</span>
+      <span v-if="row.parentIsArray" class="text-muted-foreground">{{ row.name }}</span>
+      <span v-else class="font-medium text-foreground" :title="row.name">"{{ row.name }}"</span>
+      <span class="text-muted-foreground">:&nbsp;</span>
 
       <template v-if="row.isContainer">
         <template v-if="row.open">
-          <span class="text-ink-muted">{{ isArray ? '[' : '{' }}</span>
+          <span class="text-muted-foreground">{{ isArray ? '[' : '{' }}</span>
         </template>
         <template v-else>
           <button
             type="button"
-            class="cursor-pointer text-ink hover:underline"
+            class="cursor-pointer text-foreground hover:underline"
             @click="toggle"
           >
             {{ isArray ? '[…]' : '{…}' }}
           </button>
-          <span class="ml-1.5 select-none text-xs text-ink-muted">{{ lengthLabel }}</span>
+          <span class="ml-1.5 select-none text-xs text-muted-foreground">{{ lengthLabel }}</span>
         </template>
       </template>
 
-      <span v-else :title="previewTitle" class="text-accent">{{ preview }}</span>
+      <span v-else :title="previewTitle" :class="previewClass">{{ preview }}</span>
 
       <span
-        class="ml-1.5 select-none text-xs text-ink-muted opacity-0 transition-opacity group-hover:opacity-100"
+        class="ml-1.5 select-none text-xs text-muted-foreground opacity-0 transition-opacity group-hover:opacity-100"
       >
         {{ kindLabel }}<template v-if="lengthLabel"> · {{ lengthLabel }}</template>
       </span>
@@ -462,11 +471,11 @@ const lengthLabel = computed(() =>
     <!-- 悬停操作 -->
     <div
       v-if="!editing && !store.treeEditReadonly"
-      class="flex shrink-0 items-center gap-0.5 opacity-0 transition-opacity group-hover:opacity-100"
+      class="flex shrink-0 items-center gap-0.5 opacity-0 transition-opacity group-hover:opacity-100 group-focus-within:opacity-100"
     >
       <button
         type="button"
-        class="rounded p-0.5 text-ink-muted transition-colors hover:text-primary-strong"
+        class="grid size-6 place-items-center rounded text-muted-foreground transition-colors duration-150 hover:text-accent"
         :title="row.isContainer ? '添加子项' : '编辑'"
         :aria-label="row.isContainer ? '添加子项' : '编辑'"
         @click="row.isContainer ? addChild() : startEdit()"
@@ -476,7 +485,7 @@ const lengthLabel = computed(() =>
       <button
         v-if="row.isContainer"
         type="button"
-        class="rounded p-0.5 text-ink-muted transition-colors hover:text-primary-strong"
+        class="grid size-6 place-items-center rounded text-muted-foreground transition-colors duration-150 hover:text-accent"
         aria-label="编辑"
         @click="startEdit"
       >
@@ -490,7 +499,7 @@ const lengthLabel = computed(() =>
       >
         <button
           type="button"
-          class="rounded p-0.5 text-ink-muted transition-colors hover:text-primary-strong"
+          class="grid size-6 place-items-center rounded text-muted-foreground transition-colors duration-150 hover:text-accent"
           aria-label="排序"
         >
           <NIcon :size="13"><ReorderTwoOutline /></NIcon>
@@ -499,7 +508,7 @@ const lengthLabel = computed(() =>
       <button
         v-if="row.path.length > 0"
         type="button"
-        class="rounded p-0.5 text-ink-muted transition-colors hover:text-red-500"
+        class="grid size-6 place-items-center rounded text-muted-foreground transition-colors duration-150 hover:text-destructive"
         aria-label="删除"
         @click="removeSelf"
       >

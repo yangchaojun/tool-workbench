@@ -61,7 +61,7 @@ watch(
   --flip-w: 52px;
   --flip-h: 76px;
   --flip-font: 44px;
-  --flip-radius: 10px;
+  --flip-radius: 8px;
   /* pen 用 52rem 对 20vw 卡 ≈ 卡高 3.25 倍，随尺寸换算保持同等透视张力 */
   --flip-perspective: calc(var(--flip-h) * 3.25);
   position: relative;
@@ -69,13 +69,10 @@ watch(
   width: var(--flip-w);
   height: var(--flip-h);
   font-size: var(--flip-font);
-  font-weight: 700;
-  color: var(--color-ink);
+  font-weight: 500;
+  color: var(--color-foreground);
   font-variant-numeric: tabular-nums;
   border-radius: var(--flip-radius);
-  box-shadow:
-    0 1px 2px rgb(0 0 0 / 0.08),
-    0 4px 10px rgb(0 0 0 / 0.1);
 }
 
 /* 全屏层随视口缩放 */
@@ -83,7 +80,7 @@ watch(
   --flip-w: clamp(56px, 11vmin, 96px);
   --flip-h: clamp(80px, 16vmin, 140px);
   --flip-font: clamp(48px, 9.5vmin, 84px);
-  --flip-radius: 14px;
+  --flip-radius: 10px;
 }
 
 /* 前后两张整卡叠放，数字由上下两个裁切半区拼成 */
@@ -99,7 +96,7 @@ watch(
   height: 50%;
   overflow: hidden;
   background: var(--color-card);
-  border: 1px solid var(--color-line);
+  border: 1px solid var(--color-border);
 }
 
 .half.top {
@@ -155,7 +152,7 @@ watch(
   right: 1px;
   top: calc(50% - 0.5px);
   height: 1px;
-  background: var(--color-line);
+  background: var(--color-border);
   z-index: 4;
 }
 

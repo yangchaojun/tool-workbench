@@ -47,7 +47,7 @@ const phaseColor = computed(() =>
           v-for="(on, i) in store.cycleDots"
           :key="i"
           class="size-1.5 rounded-full"
-          :class="on ? 'bg-accent' : 'bg-line'"
+          :class="on ? 'bg-accent' : 'bg-border'"
         />
       </span>
     </div>

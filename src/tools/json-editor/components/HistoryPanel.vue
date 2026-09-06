@@ -73,7 +73,7 @@ function onClear() {
       </NButton>
     </div>
 
-    <div v-if="store.docHistory.length === 0" class="px-1 py-3 text-center text-xs text-ink-muted">
+    <div v-if="store.docHistory.length === 0" class="px-1 py-3 text-center text-xs text-muted-foreground">
       暂无文档历史——上传或从 URL 载入后自动记录
     </div>
 
@@ -82,22 +82,22 @@ function onClear() {
         v-for="entry in store.docHistory"
         :key="entry.id"
         class="group flex items-center gap-2 rounded px-1.5 py-1.5"
-        :class="canRestore(entry) ? 'cursor-pointer hover:bg-primary-soft/40' : 'cursor-default opacity-60'"
+        :class="canRestore(entry) ? 'cursor-pointer hover:bg-muted' : 'cursor-default opacity-60'"
         :title="canRestore(entry) ? '载入此文档' : '内容超出 256KB 未缓存，无法直接恢复'"
         @click="canRestore(entry) && store.restoreFromDocHistory(entry.id)"
       >
-        <NIcon :size="14" class="shrink-0 text-ink-muted"><component :is="kindIcon(entry)" /></NIcon>
+        <NIcon :size="14" class="shrink-0 text-muted-foreground"><component :is="kindIcon(entry)" /></NIcon>
         <span class="min-w-0 flex-1 truncate font-mono text-xs" :title="displayName(entry)">
           {{ displayName(entry) }}
         </span>
-        <span v-if="entry.content === null" class="shrink-0 text-xs text-ink-muted">未缓存</span>
-        <span class="shrink-0 text-xs text-ink-muted">
+        <span v-if="entry.content === null" class="shrink-0 text-xs text-muted-foreground">未缓存</span>
+        <span class="shrink-0 text-xs text-muted-foreground">
           {{ formatBytes(entry.byteSize) }} · {{ timeLabel(entry.timestamp) }}
         </span>
         <button
           v-if="entry.url !== null"
           type="button"
-          class="shrink-0 rounded p-0.5 text-ink-muted opacity-0 transition-opacity hover:text-primary-strong group-hover:opacity-100"
+          class="grid size-6 shrink-0 place-items-center rounded text-muted-foreground opacity-0 transition-opacity hover:text-accent group-hover:opacity-100 group-focus-within:opacity-100"
           aria-label="重新拉取"
           title="重新拉取"
           @click.stop="store.refetchDocHistoryEntry(entry.id)"
@@ -105,8 +105,9 @@ function onClear() {
           <NIcon :size="13"><CloudDownloadOutline /></NIcon>
         </button>
         <button
+          v-if="entry.url !== null"
           type="button"
-          class="shrink-0 rounded p-0.5 text-ink-muted opacity-0 transition-opacity hover:text-red-500 group-hover:opacity-100"
+          class="grid size-6 shrink-0 place-items-center rounded text-muted-foreground opacity-0 transition-opacity hover:text-destructive group-hover:opacity-100 group-focus-within:opacity-100"
           aria-label="删除此条"
           title="删除此条"
           @click.stop="store.removeDocHistoryEntry(entry.id)"
@@ -116,7 +117,7 @@ function onClear() {
       </div>
     </div>
 
-    <div class="flex items-center justify-between border-t border-line/60 pt-2">
+    <div class="flex items-center justify-between border-t border-border pt-2">
       <NButton
         size="tiny"
         quaternary

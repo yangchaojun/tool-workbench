@@ -34,8 +34,8 @@ function onMainClick() {
   <section>
     <header class="mb-6 flex items-start justify-between gap-4">
       <div>
-        <h1 class="text-2xl font-semibold tracking-tight">番茄任务钟</h1>
-        <p class="mt-1 text-sm text-ink-muted">专注一个番茄，休息片刻，循环推进。</p>
+        <h1 class="text-2xl font-medium tracking-tight">番茄任务钟</h1>
+        <p class="mt-1 text-sm text-muted-foreground">专注一个番茄，休息片刻，循环推进。</p>
       </div>
       <div class="flex shrink-0 items-center gap-1">
         <NButton quaternary circle aria-label="进入全屏专注" @click="showFullscreen = true">
@@ -54,13 +54,9 @@ function onMainClick() {
     <div class="grid items-start gap-6 lg:grid-cols-[minmax(0,1fr)_340px]">
       <!-- 计时器 -->
       <section
-        class="flex flex-col items-center rounded-card border border-line/60 bg-card p-6 shadow-card md:p-8"
+        class="flex flex-col items-center rounded-panel border border-border bg-card p-6 md:p-8"
       >
-        <div
-          class="mb-8 flex rounded-full bg-primary-soft/50 p-1"
-          role="tablist"
-          aria-label="计时模式"
-        >
+        <div class="mb-8 flex gap-1" role="tablist" aria-label="计时模式">
           <button
             v-for="p in phaseKeys"
             :key="p"
@@ -68,11 +64,11 @@ function onMainClick() {
             role="tab"
             :aria-selected="store.runtime.phase === p"
             :disabled="store.runtime.status !== 'idle'"
-            class="cursor-pointer rounded-full px-4 py-1.5 text-sm transition-colors duration-200 disabled:cursor-not-allowed"
+            class="cursor-pointer rounded-lg px-4 py-1.5 text-sm transition-colors duration-150 disabled:cursor-not-allowed"
             :class="
               store.runtime.phase === p
-                ? 'bg-card font-medium text-ink shadow-sm'
-                : 'text-ink-muted hover:text-ink disabled:hover:text-ink-muted'
+                ? 'bg-accent-50 font-medium text-foreground'
+                : 'text-muted-foreground hover:bg-muted hover:text-foreground disabled:hover:bg-transparent disabled:hover:text-muted-foreground'
             "
             @click="store.switchPhase(p)"
           >
@@ -87,7 +83,6 @@ function onMainClick() {
           <NButton
             type="primary"
             size="large"
-            round
             :secondary="store.runtime.status === 'running'"
             class="min-w-32"
             @click="onMainClick"
@@ -97,7 +92,6 @@ function onMainClick() {
           <NButton
             quaternary
             size="large"
-            round
             :disabled="store.runtime.status === 'idle'"
             @click="store.skip()"
           >
@@ -106,7 +100,6 @@ function onMainClick() {
           <NButton
             quaternary
             size="large"
-            round
             :disabled="store.runtime.status === 'idle'"
             @click="store.reset()"
           >

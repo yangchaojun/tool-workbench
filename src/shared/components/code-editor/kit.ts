@@ -61,42 +61,52 @@ const errorMarkField = StateField.define<DecorationSet>({
 /** 跟随工作台 CSS 变量的主题——换肤时编辑器无需重载 */
 const workbenchTheme = EditorView.theme({
   '&': {
-    color: 'var(--color-ink)',
+    color: 'var(--color-foreground)',
     backgroundColor: 'transparent',
-    fontSize: '13px',
+    fontSize: 'var(--text-json)',
     height: '100%',
   },
   '.cm-scroller': {
     overflow: 'auto',
-    lineHeight: '1.6',
+    lineHeight: 'var(--text-json--line-height)',
     fontFamily:
-      "ui-monospace, SFMono-Regular, Menlo, Consolas, 'Liberation Mono', monospace",
+      "ui-monospace, 'SF Mono', 'Cascadia Mono', Menlo, Consolas, 'Liberation Mono', monospace",
   },
-  '.cm-content': { caretColor: 'var(--color-primary)' },
+  '.cm-content': { caretColor: 'var(--color-foreground)' },
   '.cm-gutters': {
     backgroundColor: 'transparent',
-    color: 'var(--color-ink-muted)',
+    color: 'var(--color-muted-foreground)',
     border: 'none',
   },
   '.cm-activeLine': {
-    backgroundColor: 'color-mix(in srgb, var(--color-primary) 8%, transparent)',
+    backgroundColor: 'var(--color-json-editor-highlight)',
   },
   '.cm-activeLineGutter': { backgroundColor: 'transparent' },
   '&.cm-focused': { outline: 'none' },
-  '.cm-errorLine': {
-    backgroundColor: 'color-mix(in srgb, #ef4444 10%, transparent)',
+  // 工具侧自绘查找替换时 @codemirror/search 的匹配高亮（MASTER.md「Search match」）
+  '.cm-searchMatch': {
+    backgroundColor: 'var(--color-json-match-bg)',
+    color: 'var(--color-json-match-text)',
   },
-  '.cm-errorToken': { textDecoration: 'underline wavy #ef4444' },
+  '.cm-searchMatch-selected': {
+    backgroundColor: 'var(--color-json-match-bg)',
+    color: 'var(--color-json-match-text)',
+    outline: '1px solid var(--color-accent)',
+  },
+  '.cm-errorLine': {
+    backgroundColor: 'color-mix(in srgb, var(--color-destructive) 10%, transparent)',
+  },
+  '.cm-errorToken': { textDecoration: 'underline wavy var(--color-destructive)' },
 })
 
+/* JSON 语法四色（MASTER.md「JSON / Code Syntax Colors」，双主题经 CSS 变量切换） */
 const jsonHighlight = HighlightStyle.define([
-  { tag: t.propertyName, color: 'var(--color-primary-strong)' },
-  {
-    tag: t.string,
-    color: 'color-mix(in srgb, var(--color-ink) 72%, var(--color-primary))',
-  },
-  { tag: [t.number, t.bool, t.null], color: 'var(--color-accent)' },
-  { tag: t.invalid, color: '#ef4444' },
+  { tag: t.propertyName, color: 'var(--color-foreground)', fontWeight: '500' },
+  { tag: t.string, color: 'var(--color-json-string)' },
+  { tag: t.number, color: 'var(--color-json-number)' },
+  { tag: t.bool, color: 'var(--color-json-boolean)' },
+  { tag: t.null, color: 'var(--color-json-null)' },
+  { tag: t.invalid, color: 'var(--color-destructive)' },
 ])
 
 export function buildBaseExtensions(withHistory = true): Extension[] {

@@ -16,11 +16,6 @@ export const toolManifestSchema = z.object({
     .regex(/^[a-z0-9]+(?:-[a-z0-9]+)*$/, 'id 只能包含小写字母、数字与连字符'),
   name: z.string().min(1),
   description: z.string().min(1),
-  /** 工具级强调色（卡片/页内点缀），6 位 hex */
-  accent: z
-    .string()
-    .regex(/^#[0-9a-fA-F]{6}$/, 'accent 必须是 #RRGGBB')
-    .default('#0d9488'),
 })
 
 export type ToolManifest = z.output<typeof toolManifestSchema>

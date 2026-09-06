@@ -27,11 +27,11 @@ const mainLabel = computed(() => {
   return `开始${phaseMeta[store.runtime.phase].label}`
 })
 
-const mainButtonStyle = computed(() => ({
-  backgroundColor:
-    store.runtime.phase === 'focus' ? 'var(--color-accent)' : 'var(--color-primary)',
-  color: '#0c161e',
-}))
+const mainButtonStyle = computed(() =>
+  store.runtime.phase === 'focus'
+    ? { backgroundColor: 'var(--color-accent)', color: '#ffffff' }
+    : { backgroundColor: 'var(--color-primary)', color: 'var(--color-on-primary)' },
+)
 
 function toggleRun() {
   if (store.runtime.status === 'running') store.pause()
@@ -132,22 +132,22 @@ onBeforeUnmount(() => {
     <Transition name="immersive">
       <div
         v-if="show"
-        class="dark fixed inset-0 z-[3000] flex select-none flex-col items-center justify-center gap-7 overflow-hidden bg-surface text-ink"
+        class="dark fixed inset-0 z-[3000] flex select-none flex-col items-center justify-center gap-7 overflow-hidden bg-background text-foreground"
       >
         <button
           type="button"
           aria-label="退出全屏"
-          class="absolute right-5 top-5 grid size-11 cursor-pointer place-items-center rounded-full border border-line/40 text-ink-muted transition-colors duration-200 hover:border-line hover:text-ink"
+          class="absolute right-5 top-5 grid size-11 cursor-pointer place-items-center rounded-full border border-border text-muted-foreground transition-colors duration-150 hover:border-border-hover hover:text-foreground"
           @click="exitImmersive"
         >
           <NIcon :size="22"><CloseOutline /></NIcon>
         </button>
 
         <span
-          class="rounded-full px-4 py-1 text-sm font-medium"
+          class="rounded-lg px-4 py-1 text-sm font-medium"
           :style="{
-            backgroundColor: 'var(--color-primary-soft)',
-            color: 'var(--color-primary-strong)',
+            backgroundColor: 'var(--color-accent-50)',
+            color: 'var(--color-foreground)',
           }"
         >
           {{ phaseMeta[store.runtime.phase].label }}
@@ -165,7 +165,7 @@ onBeforeUnmount(() => {
 
         <span
           v-if="activeTask"
-          class="max-w-[80vw] truncate rounded-full bg-card/70 px-4 py-1.5 text-sm text-ink-muted"
+          class="max-w-[80vw] truncate rounded-lg bg-card/70 px-4 py-1.5 text-sm text-muted-foreground"
         >
           当前任务 · {{ activeTask.title }}
         </span>
@@ -173,7 +173,7 @@ onBeforeUnmount(() => {
         <div class="flex flex-wrap items-center justify-center gap-3">
           <button
             type="button"
-            class="min-w-36 cursor-pointer rounded-full px-8 py-3 text-lg font-medium transition-transform duration-200 hover:scale-[1.03]"
+            class="min-w-36 cursor-pointer rounded-lg px-8 py-3 text-lg font-medium transition-colors duration-150"
             :style="mainButtonStyle"
             @click="toggleRun"
           >
@@ -182,7 +182,7 @@ onBeforeUnmount(() => {
           <button
             type="button"
             :disabled="store.runtime.status === 'idle'"
-            class="cursor-pointer rounded-full border border-line/60 px-6 py-3 text-ink-muted transition-colors duration-200 hover:border-line hover:text-ink disabled:cursor-not-allowed disabled:opacity-40"
+            class="cursor-pointer rounded-lg border border-border px-6 py-3 text-muted-foreground transition-colors duration-150 hover:border-border-hover hover:text-foreground disabled:cursor-not-allowed disabled:opacity-40"
             @click="store.skip()"
           >
             跳过
@@ -190,7 +190,7 @@ onBeforeUnmount(() => {
           <button
             type="button"
             :disabled="store.runtime.status === 'idle'"
-            class="cursor-pointer rounded-full border border-line/60 px-6 py-3 text-ink-muted transition-colors duration-200 hover:border-line hover:text-ink disabled:cursor-not-allowed disabled:opacity-40"
+            class="cursor-pointer rounded-lg border border-border px-6 py-3 text-muted-foreground transition-colors duration-150 hover:border-border-hover hover:text-foreground disabled:cursor-not-allowed disabled:opacity-40"
             @click="store.reset()"
           >
             重置

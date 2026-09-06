@@ -55,8 +55,8 @@ defineExpose({ remeasure })
 
 <template>
   <div
-    class="relative flex h-full min-h-0 flex-col overflow-clip rounded-card border bg-card shadow-card transition-shadow"
-    :class="dragDepth > 0 ? 'border-primary ring-2 ring-primary/30' : 'border-line/60'"
+    class="relative flex h-full min-h-0 flex-col overflow-clip rounded-panel border bg-card"
+    :class="dragDepth > 0 ? 'border-accent ring-1 ring-accent/40' : 'border-border'"
     @dragenter.prevent="dragDepth += 1"
     @dragover.prevent
     @dragleave.prevent="dragDepth = Math.max(0, dragDepth - 1)"
@@ -68,7 +68,7 @@ defineExpose({ remeasure })
     <button
       v-if="!findOpen"
       type="button"
-      class="absolute right-3 top-2 z-10 rounded p-1.5 text-ink-muted transition-colors hover:bg-primary-soft/60 hover:text-ink"
+      class="absolute right-3 top-2 z-10 rounded p-1.5 text-muted-foreground transition-colors duration-150 hover:bg-muted hover:text-foreground"
       aria-label="查找替换（⌘F）"
       title="查找替换（⌘F）"
       @click="openFind"
@@ -88,7 +88,7 @@ defineExpose({ remeasure })
     </div>
     <div
       v-if="dragDepth > 0"
-      class="pointer-events-none absolute inset-0 flex items-center justify-center bg-primary-soft/70 text-sm font-medium text-primary-strong"
+      class="pointer-events-none absolute inset-0 flex items-center justify-center bg-accent-50 text-sm font-medium text-foreground"
     >
       松开以载入文件
     </div>

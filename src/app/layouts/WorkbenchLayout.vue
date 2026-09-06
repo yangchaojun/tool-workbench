@@ -28,7 +28,7 @@ watch(
   <div class="min-h-screen">
     <!-- 桌面侧边栏 -->
     <aside
-      class="fixed inset-y-0 left-0 z-20 hidden w-60 flex-col border-r border-line/60 bg-card md:flex"
+      class="fixed inset-y-0 left-0 z-20 hidden w-60 flex-col border-r border-border bg-card md:flex"
     >
       <div class="flex-1 overflow-y-auto">
         <WorkbenchNav />
@@ -37,14 +37,14 @@ watch(
 
     <!-- 移动端顶栏 -->
     <header
-      class="sticky top-0 z-20 flex h-14 items-center gap-1 border-b border-line/60 bg-card/85 px-3 backdrop-blur md:hidden"
+      class="sticky top-0 z-20 flex h-14 items-center gap-1 border-b border-border bg-background/90 px-3 backdrop-blur md:hidden"
     >
       <NButton quaternary circle aria-label="打开导航" @click="drawerOpen = true">
         <template #icon>
           <NIcon :size="20"><MenuOutline /></NIcon>
         </template>
       </NButton>
-      <span class="text-[15px] font-semibold tracking-tight">工具台</span>
+      <span class="text-[15px] font-medium tracking-tight">工具台</span>
     </header>
 
     <NDrawer v-model:show="drawerOpen" placement="left" :width="272">
