@@ -26,10 +26,8 @@ type NumberField =
   | 'longBreakEvery'
   | 'dailyGoal'
 
-function bindNumber(field: NumberField) {
-  return (value: number | null) => {
-    if (value !== null) store.settings[field] = value
-  }
+function updateNumber(field: NumberField, value: number | null) {
+  if (value !== null) store.settings[field] = value
 }
 
 const notifyPending = ref(false)
@@ -67,7 +65,7 @@ function restoreDefaults() {
             :min="1"
             :max="99"
             :value="store.settings.focusMinutes"
-            @update:value="bindNumber('focusMinutes')"
+            @update:value="v => updateNumber('focusMinutes', v)"
           />
         </div>
         <div class="flex items-center justify-between gap-4 py-2">
@@ -78,7 +76,7 @@ function restoreDefaults() {
             :min="1"
             :max="30"
             :value="store.settings.shortBreakMinutes"
-            @update:value="bindNumber('shortBreakMinutes')"
+            @update:value="v => updateNumber('shortBreakMinutes', v)"
           />
         </div>
         <div class="flex items-center justify-between gap-4 py-2">
@@ -89,7 +87,7 @@ function restoreDefaults() {
             :min="5"
             :max="60"
             :value="store.settings.longBreakMinutes"
-            @update:value="bindNumber('longBreakMinutes')"
+            @update:value="v => updateNumber('longBreakMinutes', v)"
           />
         </div>
         <div class="flex items-center justify-between gap-4 py-2">
@@ -100,7 +98,7 @@ function restoreDefaults() {
             :min="2"
             :max="10"
             :value="store.settings.longBreakEvery"
-            @update:value="bindNumber('longBreakEvery')"
+            @update:value="v => updateNumber('longBreakEvery', v)"
           />
         </div>
         <div class="flex items-center justify-between gap-4 py-2">
@@ -111,7 +109,7 @@ function restoreDefaults() {
             :min="1"
             :max="24"
             :value="store.settings.dailyGoal"
-            @update:value="bindNumber('dailyGoal')"
+            @update:value="v => updateNumber('dailyGoal', v)"
           />
         </div>
 
