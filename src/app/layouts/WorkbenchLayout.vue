@@ -7,6 +7,7 @@ import { CaretBack, CaretForward, MenuOutline } from '@vicons/ionicons5'
 
 import WorkbenchNav from './WorkbenchNav.vue'
 import { useLayoutStore } from '@/app/stores/layout'
+import { getTool } from '@/core/tools/registry'
 
 const route = useRoute()
 const drawerOpen = ref(false)
@@ -14,6 +15,11 @@ const layout = useLayoutStore()
 
 const asideWidth = computed(() => (layout.collapsed ? 'w-16' : 'w-60'))
 const mainPadding = computed(() => (layout.collapsed ? 'md:pl-16' : 'md:pl-60'))
+const contentFullWidth = computed(
+  () =>
+    route.name === 'tool' &&
+    getTool(String(route.params.toolId))?.manifest.fullWidth === true,
+)
 
 // 路由变化即收起移动端抽屉；离开工具页时恢复基础标题（计时中的标题由番茄钟 store 接管）
 watch(
@@ -79,7 +85,13 @@ watch(
     </NDrawer>
 
     <main :class="mainPadding">
-      <div class="mx-auto w-full max-w-5xl px-4 py-6 md:px-8 md:py-10">
+      <div
+        :class="
+          contentFullWidth
+            ? 'w-full px-4 py-6 md:px-8 md:py-10'
+            : 'mx-auto w-full max-w-5xl px-4 py-6 md:px-8 md:py-10'
+        "
+      >
         <RouterView />
       </div>
     </main>

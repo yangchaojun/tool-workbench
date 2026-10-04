@@ -16,6 +16,8 @@ export const toolManifestSchema = z.object({
     .regex(/^[a-z0-9]+(?:-[a-z0-9]+)*$/, 'id 只能包含小写字母、数字与连字符'),
   name: z.string().min(1),
   description: z.string().min(1),
+  /** 主视图铺满内容区（去掉 max-w 居中约束），供编辑器类宽工具声明 */
+  fullWidth: z.boolean().optional(),
 })
 
 export type ToolManifest = z.output<typeof toolManifestSchema>
