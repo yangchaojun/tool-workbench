@@ -1,13 +1,19 @@
 <script setup lang="ts">
+import { computed } from 'vue'
 import { ref, watch } from 'vue'
 import { useRoute } from 'vue-router'
 import { NButton, NDrawer, NIcon } from 'naive-ui'
-import { MenuOutline } from '@vicons/ionicons5'
+import { CaretBack, CaretForward, MenuOutline } from '@vicons/ionicons5'
 
 import WorkbenchNav from './WorkbenchNav.vue'
+import { useLayoutStore } from '@/app/stores/layout'
 
 const route = useRoute()
 const drawerOpen = ref(false)
+const layout = useLayoutStore()
+
+const asideWidth = computed(() => (layout.collapsed ? 'w-16' : 'w-60'))
+const mainPadding = computed(() => (layout.collapsed ? 'md:pl-16' : 'md:pl-60'))
 
 // 路由变化即收起移动端抽屉；离开工具页时恢复基础标题（计时中的标题由番茄钟 store 接管）
 watch(
@@ -28,10 +34,29 @@ watch(
   <div class="min-h-screen">
     <!-- 桌面侧边栏 -->
     <aside
-      class="fixed inset-y-0 left-0 z-20 hidden w-60 flex-col border-r border-border bg-card md:flex"
+      :class="[
+        'fixed inset-y-0 left-0 z-20 hidden flex-col border-r border-border bg-card transition-[width] duration-200 md:flex',
+        asideWidth,
+      ]"
     >
       <div class="flex-1 overflow-y-auto">
-        <WorkbenchNav />
+        <WorkbenchNav :collapsed="layout.collapsed" />
+      </div>
+      <!-- 收缩按钮放在 aside 内部，跟随宽度变化，移动端抽屉不渲染它 -->
+      <div class="hidden items-center justify-end pr-3 pb-3 md:flex">
+        <NButton
+          quaternary
+          circle
+          :aria-label="layout.collapsed ? '展开侧边栏' : '收起侧边栏'"
+          @click="layout.toggle()"
+        >
+          <template #icon>
+            <NIcon :size="20">
+              <CaretForward v-if="layout.collapsed" />
+              <CaretBack v-else />
+            </NIcon>
+          </template>
+        </NButton>
       </div>
     </aside>
 
@@ -53,7 +78,7 @@ watch(
       </div>
     </NDrawer>
 
-    <main class="md:pl-60">
+    <main :class="mainPadding">
       <div class="mx-auto w-full max-w-5xl px-4 py-6 md:px-8 md:py-10">
         <RouterView />
       </div>
