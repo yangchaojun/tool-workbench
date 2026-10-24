@@ -1,5 +1,5 @@
 <script setup lang="ts">
-import { computed, ref, watch } from 'vue'
+import { computed, onUnmounted, ref, watch } from 'vue'
 import { NDropdown, NIcon, NInput, NSelect } from 'naive-ui'
 import {
   AddOutline,
@@ -306,6 +306,28 @@ const dropHint = computed<DropMode | null>(() => {
   return pathKey(dragState.target.path) === myKey.value ? dragState.target.mode : null
 })
 
+// ── 点击字段名复制 ──────────────────────────────────────────────
+
+const copyTip = ref<'copied' | 'failed' | null>(null)
+let copyTipTimer: number | undefined
+
+async function copyKey() {
+  try {
+    await navigator.clipboard.writeText(props.row.name)
+    copyTip.value = 'copied'
+  } catch {
+    copyTip.value = 'failed'
+  }
+  window.clearTimeout(copyTipTimer)
+  copyTipTimer = window.setTimeout(() => {
+    copyTip.value = null
+  }, 1500)
+}
+
+onUnmounted(() => {
+  window.clearTimeout(copyTipTimer)
+})
+
 // ── 值预览 ──────────────────────────────────────────────────────
 const preview = computed(() => {
   const v = props.row.value
@@ -440,7 +462,17 @@ const previewClass = computed(() => {
     <!-- 展示态 -->
     <div v-else class="min-w-0 flex-1 truncate">
       <span v-if="row.parentIsArray" class="text-muted-foreground">{{ row.name }}</span>
-      <span v-else class="font-medium text-foreground" :title="row.name">"{{ row.name }}"</span>
+      <span
+        v-else
+        class="cursor-pointer font-medium text-foreground hover:underline"
+        :title="`点击复制：${row.name}`"
+        @click="copyKey"
+      >"{{ row.name }}"</span>
+      <span
+        v-if="copyTip !== null"
+        class="select-none text-xs"
+        :class="copyTip === 'copied' ? 'text-accent' : 'text-destructive'"
+      >{{ copyTip === 'copied' ? '已复制 ✓' : '复制失败' }}</span>
       <span class="text-muted-foreground">:&nbsp;</span>
 
       <template v-if="row.isContainer">
