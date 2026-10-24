@@ -54,11 +54,11 @@ function cancel() {
         <li v-for="(fix, i) in candidate?.fixes ?? []" :key="i" class="mb-2 last:mb-0">
           <div class="mb-0.5 text-muted-foreground">第 {{ fix.line }} 行 第 {{ fix.column }} 列 · {{ fix.kind }}</div>
           <div class="flex items-start gap-2">
-            <span class="max-w-[45%] break-all rounded bg-destructive/10 px-1 py-0.5 text-destructive line-through">
+            <span class="max-w-[45%] break-all rounded bg-destructive-soft px-1 py-0.5 text-destructive line-through">
               {{ fix.before === '' ? '（无）' : fix.before }}
             </span>
             <span class="text-muted-foreground">→</span>
-            <span class="min-w-0 break-all rounded bg-accent/10 px-1 py-0.5 text-accent">
+            <span class="min-w-0 break-all rounded bg-accent-50 px-1 py-0.5 text-accent">
               {{ fix.after === '' ? '（删除）' : fix.after }}
             </span>
           </div>

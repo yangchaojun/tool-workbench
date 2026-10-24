@@ -104,7 +104,7 @@ function close() {
 
 <template>
   <div
-    class="absolute right-3 top-3 z-10 flex w-[min(30rem,calc(100%-1.5rem))] flex-col gap-2 rounded-panel border border-border bg-card p-3"
+    class="absolute right-3 top-3 z-10 flex w-[min(30rem,calc(100%-1.5rem))] flex-col gap-2 rounded-panel border border-border bg-card p-3 shadow-panel"
   >
     <div class="flex items-center gap-1.5">
       <NInput

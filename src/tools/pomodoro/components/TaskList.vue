@@ -23,7 +23,7 @@ const inputProps = { onKeydown: onInputKeydown }
 </script>
 
 <template>
-  <section class="rounded-panel border border-border bg-card p-5">
+  <section class="rounded-panel border border-border bg-card p-5 shadow-card">
     <div class="mb-4 flex items-center justify-between">
       <h2 class="text-[15px] font-medium">任务</h2>
       <span class="text-xs text-muted-foreground">
@@ -130,7 +130,7 @@ const inputProps = { onKeydown: onInputKeydown }
       </li>
     </ul>
 
-    <p v-if="store.tasks.some((t) => !t.done)" class="mt-3 text-xs text-muted-foreground/80">
+    <p v-if="store.tasks.some((t) => !t.done)" class="mt-3 text-xs text-mute">
       点击任务设为当前专注对象，完成的番茄会自动计入。
     </p>
   </section>

@@ -55,7 +55,7 @@ defineExpose({ remeasure })
 
 <template>
   <div
-    class="relative flex h-full min-h-0 flex-col overflow-clip rounded-panel border bg-card"
+    class="relative flex h-full min-h-0 flex-col overflow-clip rounded-panel border bg-card shadow-card"
     :class="dragDepth > 0 ? 'border-accent ring-1 ring-accent/40' : 'border-border'"
     @dragenter.prevent="dragDepth += 1"
     @dragover.prevent

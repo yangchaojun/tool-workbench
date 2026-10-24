@@ -54,7 +54,7 @@ function onMainClick() {
     <div class="grid items-start gap-6 lg:grid-cols-[minmax(0,1fr)_340px]">
       <!-- 计时器 -->
       <section
-        class="flex flex-col items-center rounded-panel border border-border bg-card p-6 md:p-8"
+        class="flex flex-col items-center rounded-panel border border-border bg-card p-6 shadow-card md:p-8"
       >
         <div class="mb-8 flex gap-1" role="tablist" aria-label="计时模式">
           <button

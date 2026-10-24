@@ -45,11 +45,11 @@ const statusMark = computed(() => {
 const rowClass = computed(() => {
   switch (props.node.status) {
     case 'added':
-      return 'bg-accent/10 text-accent'
+      return 'bg-accent-50 text-accent'
     case 'removed':
-      return 'bg-destructive/10 text-destructive line-through decoration-destructive/70'
+      return 'bg-destructive-soft text-destructive line-through decoration-destructive'
     case 'changed':
-      return 'bg-json-number/10 text-json-number'
+      return 'bg-warning-soft text-json-number'
     default:
       return ''
   }

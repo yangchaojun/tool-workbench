@@ -140,13 +140,13 @@ function restoreDefaults() {
             @update:value="onNotifyChange"
           />
         </div>
-        <p class="py-1 text-xs leading-relaxed text-muted-foreground/80">
+        <p class="py-1 text-xs leading-relaxed text-mute">
           开启后，一段结束时会发送系统通知（需要授权）。
         </p>
 
         <div class="mt-6 flex items-center justify-between">
           <NButton size="small" quaternary @click="restoreDefaults">恢复默认</NButton>
-          <span class="text-xs text-muted-foreground/70">设置保存在本机浏览器</span>
+          <span class="text-xs text-mute">设置保存在本机浏览器</span>
         </div>
       </div>
     </NDrawerContent>
