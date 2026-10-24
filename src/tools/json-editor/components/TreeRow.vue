@@ -306,22 +306,34 @@ const dropHint = computed<DropMode | null>(() => {
   return pathKey(dragState.target.path) === myKey.value ? dragState.target.mode : null
 })
 
-// ── 点击字段名复制 ──────────────────────────────────────────────
+// ── 点击字段名 / 值复制 ─────────────────────────────────────────
 
-const copyTip = ref<'copied' | 'failed' | null>(null)
+const copyTip = ref<{ target: 'key' | 'value'; ok: boolean } | null>(null)
 let copyTipTimer: number | undefined
 
-async function copyKey() {
+async function copyText(text: string, target: 'key' | 'value') {
+  let ok = false
   try {
-    await navigator.clipboard.writeText(props.row.name)
-    copyTip.value = 'copied'
+    await navigator.clipboard.writeText(text)
+    ok = true
   } catch {
-    copyTip.value = 'failed'
+    ok = false
   }
+  copyTip.value = { target, ok }
   window.clearTimeout(copyTipTimer)
   copyTipTimer = window.setTimeout(() => {
     copyTip.value = null
   }, 1500)
+}
+
+function copyKey() {
+  void copyText(props.row.name, 'key')
+}
+
+/** 复制标量值的纯文本：字符串不带引号（与键名复制的所见-所得规则一致） */
+function copyValue() {
+  const v = props.row.value
+  void copyText(typeof v === 'string' ? v : String(v), 'value')
 }
 
 onUnmounted(() => {
@@ -469,10 +481,10 @@ const previewClass = computed(() => {
         @click="copyKey"
       >"{{ row.name }}"</span>
       <span
-        v-if="copyTip !== null"
+        v-if="copyTip !== null && copyTip.target === 'key'"
         class="select-none text-xs"
-        :class="copyTip === 'copied' ? 'text-accent' : 'text-destructive'"
-      >{{ copyTip === 'copied' ? '已复制 ✓' : '复制失败' }}</span>
+        :class="copyTip.ok ? 'text-accent' : 'text-destructive'"
+      >{{ copyTip.ok ? '已复制 ✓' : '复制失败' }}</span>
       <span class="text-muted-foreground">:&nbsp;</span>
 
       <template v-if="row.isContainer">
@@ -491,7 +503,17 @@ const previewClass = computed(() => {
         </template>
       </template>
 
-      <span v-else :title="previewTitle" :class="previewClass">{{ preview }}</span>
+      <span
+        v-else
+        :title="`点击复制：${previewTitle || preview}`"
+        :class="[previewClass, 'cursor-pointer hover:underline']"
+        @click="copyValue"
+      >{{ preview }}</span>
+      <span
+        v-if="copyTip !== null && copyTip.target === 'value'"
+        class="select-none text-xs"
+        :class="copyTip.ok ? 'text-accent' : 'text-destructive'"
+      >{{ copyTip.ok ? '已复制 ✓' : '复制失败' }}</span>
 
       <span
         class="ml-1.5 select-none text-xs text-muted-foreground opacity-0 transition-opacity group-hover:opacity-100"
