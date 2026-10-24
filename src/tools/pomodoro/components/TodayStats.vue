@@ -12,7 +12,7 @@ const goalPct = computed(() => {
 </script>
 
 <template>
-  <section class="rounded-panel border border-border bg-card">
+  <section class="rounded-panel border border-border bg-card shadow-card">
     <div class="grid grid-cols-3 divide-x divide-border">
       <div class="p-4">
         <p class="text-xs text-muted-foreground">今日番茄</p>

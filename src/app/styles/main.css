@@ -4,88 +4,101 @@
 @custom-variant dark (&:where(.dark, .dark *));
 
 /*
- * 设计 tokens —— 来自 design-system/toolworkbench/MASTER.md（Neutral
- * Workbench，参照 jsonview.org）。语义色在 .dark 下覆盖；Tailwind 工具类
- * 运行时引用 CSS 变量，因此换肤只需覆盖变量。层级只靠灰阶 + 1px 边框
- * 表达，teal 是唯一强调色，禁用一切阴影。
+ * 设计 tokens —— 来自根目录 DESIGN.md（Vercel-Inspired）：近白画布 +
+ * 墨色主 CTA，link 蓝 #0070f3 是唯一交互强调色（success/link 同源）；
+ * 层级靠 hairline 边框 + 轻量堆叠阴影表达。浅色逐值取自色板；深色为
+ * 中性轴极性翻转（Vercel dark 惯例），语义色与 JSON 语法色换用色板内
+ * 的 soft/deep 变体保证对比度。
  */
 @theme {
-  /* 全局等宽字体（UI + 数据一体），不加载 webfont；mono 无 CJK 字形自然回退系统字体 */
+  /* UI 无衬线（Geist 的开源替身 Inter），不加载 webfont；CJK 回退系统字体 */
+  --font-sans:
+    Geist, Inter, system-ui, -apple-system, 'PingFang SC', 'Microsoft YaHei', sans-serif;
+  /* 技术层等宽（Geist Mono / JetBrains Mono），仅代码与数据区使用 */
   --font-mono:
-    ui-monospace, 'SF Mono', 'Cascadia Mono', Menlo, Consolas, 'Liberation Mono',
-    'PingFang SC', 'Microsoft YaHei', monospace;
+    'Geist Mono', 'JetBrains Mono', ui-monospace, 'SF Mono', Menlo, Consolas,
+    'Liberation Mono', 'PingFang SC', 'Microsoft YaHei', monospace;
 
-  /* JSON 内容区字号（MASTER.md Typography） */
+  /* JSON 内容区字号 */
   --text-json: 15px;
   --text-json--line-height: 26px;
 
-  /* 中性灰阶表面 */
-  --color-background: #ffffff;
-  --color-foreground: #0a0a0a;
-  --color-card: #ffffff;
-  --color-card-foreground: #0a0a0a;
-  --color-primary: #171717;
-  --color-on-primary: #fafafa;
-  --color-secondary: #f5f5f5;
-  --color-muted: #ebebeb;
-  --color-muted-foreground: #737373;
+  /* 浅色（DESIGN.md colors） */
+  --color-background: #fafafa; /* canvas-soft：页面底 */
+  --color-foreground: #171717; /* ink */
+  --color-card: #ffffff; /* canvas：卡片/弹层 */
+  --color-primary: #171717; /* primary：唯一主 CTA 墨色 */
+  --color-on-primary: #ffffff;
+  --color-muted: #f5f5f5; /* canvas-soft-2：hover / 内嵌底 */
+  --color-muted-foreground: #4d4d4d; /* body：次级文本 */
+  --color-mute: #888888; /* mute：最低优先级文本 */
 
-  /*
-   * teal 唯一强调色（激活态底色用 50% 透明 teal）。light 下加深到 #007079
-   * （dark 保持共识色 #008c96）：#008c96 对白底小字对比 4.04:1 < 4.5，
-   * 加深后 5.84:1，小号 teal 文字无需逐处绕开
-   */
-  --color-accent: #007079;
-  --color-accent-50: #007079bf;
+  /* link 蓝是唯一强调色（colors.link / colors.success 同值）；
+     accent-50 取 link-bg-soft #d3e5ff 作激活态软底 */
+  --color-accent: #0070f3;
+  --color-accent-50: #d3e5ff;
+  --color-on-accent: #ffffff;
 
-  /* 边框 / 输入 / 焦点 */
-  --color-border: #e5e5e5;
-  --color-border-hover: #aeaeae;
-  --color-input-bg: #f2f2f2;
-  --color-input-border: #d4d4d4;
-  --color-destructive: #e40014;
-  --color-ring: #a1a1a1;
+  /* 边框 / 输入 / 焦点（hairline / hairline-strong / form-input） */
+  --color-border: #ebebeb;
+  --color-border-hover: #a1a1a1;
+  --color-input-bg: #ffffff;
+  --color-input-border: #ebebeb;
+  --color-destructive: #ee0000; /* error */
+  --color-destructive-soft: #f7d4d6; /* error-soft */
+  --color-warning-soft: #ffefcf; /* warning-soft */
+  --color-ring: #0070f3; /* 焦点环用 link 蓝 */
 
-  /* JSON 语法四色 + 搜索高亮（MASTER.md「JSON / Code Syntax Colors」） */
-  --color-json-string: #147900;
-  --color-json-number: #bd6700;
-  --color-json-boolean: #8059bb;
-  --color-json-null: #cc243d;
-  --color-json-match-bg: #f8dc90;
-  --color-json-match-text: #161616;
+  /* JSON 语法四色：violet / warning-deep / link / error，均在色板内 */
+  --color-json-string: #7928ca;
+  --color-json-number: #ab570a;
+  --color-json-boolean: #0070f3;
+  --color-json-null: #ee0000;
+  --color-json-match-bg: #ffefcf; /* warning-soft */
+  --color-json-match-text: #171717;
   --color-json-editor-highlight: #0000001f;
 
-  /* 圆角：控件 8px（Tailwind 默认 rounded-lg 即 8px），面板/卡片/模态 10px */
-  --radius-panel: 10px;
+  /* 圆角：控件 6px（--geist-radius），面板/卡片 8px（--geist-marketing-radius） */
+  --radius-panel: 8px;
+
+  /* 堆叠阴影（DESIGN.md Elevation）：多个小偏移分层，忌单层重投影 */
+  --shadow-card: 0px 1px 1px #00000005, 0px 2px 2px #0000000a;
+  --shadow-panel: 0px 2px 2px #0000000a, 0px 8px 8px -8px #0000000a;
+  --shadow-modal:
+    0px 1px 1px #00000005, 0px 8px 16px -4px #0000000a, 0px 24px 32px -8px #0000000f;
 }
 
 .dark {
-  --color-background: #0a0a0a;
-  --color-foreground: #fafafa;
+  /* 中性轴极性翻转：页面纯黑、卡片近黑、文本近白 */
+  --color-background: #000000;
+  --color-foreground: #ededed;
   --color-card: #0a0a0a;
-  --color-card-foreground: #fafafa;
   --color-primary: #fafafa;
   --color-on-primary: #171717;
-  --color-secondary: #262626;
-  --color-muted: #262626;
+  --color-muted: #1a1a1a;
   --color-muted-foreground: #a1a1a1;
+  --color-mute: #888888;
 
-  --color-accent: #008c96;
-  --color-accent-50: #008c9680;
+  --color-accent: #0070f3;
+  --color-accent-50: #0070f340;
+  --color-on-accent: #ffffff;
 
-  --color-border: #292929;
-  --color-border-hover: #5d5d5d;
-  --color-input-bg: #262626;
-  --color-input-border: #383838;
-  --color-destructive: #fb2c36;
-  --color-ring: #525252;
+  --color-border: #262626;
+  --color-border-hover: #525252;
+  --color-input-bg: #0a0a0a;
+  --color-input-border: #333333;
+  --color-destructive: #ee0000;
+  --color-destructive-soft: #ee000026;
+  --color-warning-soft: #f5a62326;
+  --color-ring: #0070f3;
 
-  --color-json-string: #68b457;
-  --color-json-number: #d0750a;
-  --color-json-boolean: #ad87ed;
-  --color-json-null: #f04c5a;
-  --color-json-match-bg: #5a4500;
-  --color-json-match-text: #eeeeee;
+  /* 语法色换色板内的 soft/亮变体（violet-soft / warning / cyan / error） */
+  --color-json-string: #d8ccf1;
+  --color-json-number: #f5a623;
+  --color-json-boolean: #50e3c2;
+  --color-json-null: #ee0000;
+  --color-json-match-bg: #ab570a; /* warning-deep */
+  --color-json-match-text: #ffefcf; /* warning-soft */
   --color-json-editor-highlight: #ffffff1f;
 }
 
@@ -99,16 +112,26 @@
     background-color: var(--color-background);
     color: var(--color-foreground);
   }
+
+  /* 文本选区（DESIGN.md selection-bg / selection-fg，深色下反转） */
+  ::selection {
+    background-color: #171717;
+    color: #f2f2f2;
+  }
+  .dark ::selection {
+    background-color: #f2f2f2;
+    color: #171717;
+  }
 }
 
 /*
- * 全局等宽字体必须用非 layer 规则：NConfigProvider 根元素自带的
+ * 全局字体必须用非 layer 规则：NConfigProvider 根元素自带的
  * v-sans 栈与 @layer base 的 body 规则同优先级且后注入，会赢；
  * fontFamily 走 themeOverrides 实测对部分组件也不生效。
  */
 body,
 .n-config-provider {
-  font-family: var(--font-mono);
+  font-family: var(--font-sans);
 }
 
 /* 键盘焦点可见（WCAG 2.4.7）：--color-ring 只服务焦点环，鼠标点击不触发 */

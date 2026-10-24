@@ -70,7 +70,7 @@ const workbenchTheme = EditorView.theme({
     overflow: 'auto',
     lineHeight: 'var(--text-json--line-height)',
     fontFamily:
-      "ui-monospace, 'SF Mono', 'Cascadia Mono', Menlo, Consolas, 'Liberation Mono', monospace",
+      "'Geist Mono', 'JetBrains Mono', ui-monospace, 'SF Mono', Menlo, Consolas, 'Liberation Mono', monospace",
   },
   '.cm-content': { caretColor: 'var(--color-foreground)' },
   '.cm-gutters': {

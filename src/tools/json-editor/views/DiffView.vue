@@ -104,7 +104,7 @@ async function onFile(event: Event, side: 'left' | 'right') {
       <div
         v-for="(side, key) in { left: { label: 'A（原数据）', state: left, text: leftText }, right: { label: 'B（新数据）', state: right, text: rightText } }"
         :key="key"
-        class="rounded-panel border border-border bg-card p-3"
+        class="rounded-panel border border-border bg-card p-3 shadow-card"
       >
         <div class="mb-2 flex items-center gap-2">
           <span class="text-sm font-medium">{{ side.label }}</span>
@@ -145,7 +145,7 @@ async function onFile(event: Event, side: 'left' | 'right') {
     </div>
 
     <!-- 结果 -->
-    <div class="rounded-panel border border-border bg-card p-4">
+    <div class="rounded-panel border border-border bg-card p-4 shadow-card">
       <div v-if="diffResult === null" class="py-6 text-center text-sm text-muted-foreground">
         双侧均为合法 JSON 后自动对比
       </div>

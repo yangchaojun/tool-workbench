@@ -33,7 +33,7 @@ const greeting = greetingFor(now.getHours())
         v-for="tool in tools"
         :key="tool.manifest.id"
         :to="`/tools/${tool.manifest.id}`"
-        class="rounded-panel border border-border bg-card p-5 transition-colors duration-150 hover:border-border-hover"
+        class="rounded-panel border border-border bg-card p-5 shadow-card transition-[background-color,border-color,box-shadow] duration-150 hover:border-border-hover hover:shadow-panel"
       >
         <div class="flex items-start gap-4">
           <span
@@ -51,7 +51,7 @@ const greeting = greetingFor(now.getHours())
       </RouterLink>
     </div>
 
-    <p class="mt-10 text-xs text-muted-foreground/80">
+    <p class="mt-10 text-xs text-mute">
       更多工具按注册契约接入，见 README「新增一个工具」。
     </p>
   </section>

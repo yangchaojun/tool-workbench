@@ -102,7 +102,7 @@ function extractToEditor() {
 </script>
 
 <template>
-  <div class="flex flex-col gap-1.5 border-t border-border/60 pt-2">
+  <div class="flex flex-col gap-1.5 border-t border-border pt-2">
     <div class="flex items-center gap-1.5">
       <NSelect
         v-model:value="lang"

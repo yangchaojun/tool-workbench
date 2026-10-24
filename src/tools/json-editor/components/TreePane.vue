@@ -82,10 +82,7 @@ const highlight = computed<MutPath | null>(() =>
 </script>
 
 <template>
-  <div
-    class="flex h-full min-h-0 flex-col overflow-clip rounded-panel border bg-card p-4"
-    :class="store.hasData ? 'border-border' : 'border-border/60'"
-  >
+  <div class="flex h-full min-h-0 flex-col overflow-clip rounded-panel border border-border bg-card p-4 shadow-card">
     <template v-if="store.hasData">
       <div class="mb-2 flex shrink-0 items-center gap-1.5">
         <NInput

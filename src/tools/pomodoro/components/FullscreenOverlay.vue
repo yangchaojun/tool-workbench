@@ -29,7 +29,7 @@ const mainLabel = computed(() => {
 
 const mainButtonStyle = computed(() =>
   store.runtime.phase === 'focus'
-    ? { backgroundColor: 'var(--color-accent)', color: '#ffffff' }
+    ? { backgroundColor: 'var(--color-accent)', color: 'var(--color-on-accent)' }
     : { backgroundColor: 'var(--color-primary)', color: 'var(--color-on-primary)' },
 )
 
