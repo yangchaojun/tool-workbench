@@ -97,6 +97,10 @@ const workbenchTheme = EditorView.theme({
     backgroundColor: 'color-mix(in srgb, var(--color-destructive) 10%, transparent)',
   },
   '.cm-errorToken': { textDecoration: 'underline wavy var(--color-destructive)' },
+  '.cm-placeholder': { color: 'var(--color-muted-foreground)' },
+  // 空文档 placeholder 态：不渲染行号与活动行高亮，避免「空白却挂着编号+灰条」的噪声
+  '&:has(.cm-placeholder) .cm-gutters': { display: 'none' },
+  '&:has(.cm-placeholder) .cm-activeLine': { backgroundColor: 'transparent' },
 })
 
 /* JSON 语法四色（MASTER.md「JSON / Code Syntax Colors」，双主题经 CSS 变量切换） */
