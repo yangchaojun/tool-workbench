@@ -1,7 +1,7 @@
 <script setup lang="ts">
 import { onBeforeUnmount, onMounted, ref, watch } from 'vue'
-import { EditorView } from '@codemirror/view'
-import { Compartment, EditorState } from '@codemirror/state'
+import { EditorView, placeholder as cmPlaceholder } from '@codemirror/view'
+import { Compartment, EditorState, type Extension } from '@codemirror/state'
 import { json } from '@codemirror/lang-json'
 import { search } from '@codemirror/search'
 
@@ -14,7 +14,8 @@ import {
 
 /**
  * CodeMirror 6 的窄契约封装（见 docs/adr/0001）。
- * 只暴露 value / readonly / language / errorMark 四个能力；
+ * value / readonly / language / errorMark 之外，history / search / placeholder
+ * 为逐次扩展的契约项（ADR-0001：优先扩展契约而非绕过它）；
  * 语言相关的智能（校验、错误定位）全部留在工具侧。
  */
 const props = withDefaults(
@@ -30,8 +31,17 @@ const props = withDefaults(
      * 内建搜索面板 UI 被抑制，搜索交互由工具侧自绘（见 ADR-0001 契约扩展）。
      */
     search?: boolean
+    /** 空文档时显示的占位文案 */
+    placeholder?: string
   }>(),
-  { readonly: false, language: 'json', errorMark: null, history: true, search: false },
+  {
+    readonly: false,
+    language: 'json',
+    errorMark: null,
+    history: true,
+    search: false,
+    placeholder: '',
+  },
 )
 
 const emit = defineEmits<{ 'update:modelValue': [value: string] }>()
@@ -41,6 +51,11 @@ let view: EditorView | null = null
 
 const languageConf = new Compartment()
 const readonlyConf = new Compartment()
+const placeholderConf = new Compartment()
+
+function placeholderExtension(text: string): Extension[] {
+  return text === '' ? [] : [cmPlaceholder(text)]
+}
 
 onMounted(() => {
   view = new EditorView({
@@ -55,6 +70,7 @@ onMounted(() => {
           : []),
         languageConf.of(props.language === 'json' ? json() : []),
         readonlyConf.of(readonlyExtensions(props.readonly)),
+        placeholderConf.of(placeholderExtension(props.placeholder)),
         EditorView.updateListener.of((update) => {
           if (update.docChanged) {
             emit('update:modelValue', update.state.doc.toString())
@@ -90,6 +106,13 @@ watch(
     view?.dispatch({
       effects: readonlyConf.reconfigure(readonlyExtensions(value)),
     })
+  },
+)
+
+watch(
+  () => props.placeholder,
+  (value) => {
+    view?.dispatch({ effects: placeholderConf.reconfigure(placeholderExtension(value)) })
   },
 )
 

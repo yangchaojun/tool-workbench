@@ -81,6 +81,7 @@ defineExpose({ remeasure })
         ref="editorRef"
         v-model="store.input"
         language="json"
+        placeholder="粘贴或输入 JSON，也可直接拖入 .json 文件"
         :history="false"
         :search="true"
         :error-mark="errorMark"
