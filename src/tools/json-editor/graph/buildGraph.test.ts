@@ -2,6 +2,7 @@ import { describe, expect, it } from 'vitest'
 
 import {
   buildGraph,
+  defaultExpandedIds,
   graphNodeId,
   scalarPreview,
   MAX_CARD_ROWS,
@@ -29,6 +30,44 @@ describe('scalarPreview', () => {
     expect(scalarPreview(42)).toBe('42')
     expect(scalarPreview(true)).toBe('true')
     expect(scalarPreview(null)).toBe('null')
+  })
+})
+
+describe('defaultExpandedIds', () => {
+  it('层级少于 5：收集全部容器 id（含根与空容器）', () => {
+    const doc = { a: { b: { c: { d: 1 } } }, e: [], f: [{ g: 2 }] }
+    const ids = defaultExpandedIds(doc)
+    expect(ids.has(graphNodeId([]))).toBe(true)
+    expect(ids.has(graphNodeId(['a']))).toBe(true)
+    expect(ids.has(graphNodeId(['a', 'b']))).toBe(true)
+    expect(ids.has(graphNodeId(['a', 'b', 'c']))).toBe(true)
+    expect(ids.has(graphNodeId(['e']))).toBe(true)
+    expect(ids.has(graphNodeId(['f']))).toBe(true)
+    expect(ids.has(graphNodeId(['f', '0']))).toBe(true)
+  })
+
+  it('恰好 4 层容器：全展开', () => {
+    const doc = { a: { b: { c: { d: 1 } } } }
+    const ids = defaultExpandedIds(doc)
+    expect(ids.has(graphNodeId(['a', 'b', 'c']))).toBe(true)
+  })
+
+  it('达到 5 层容器：整体回退为仅展开根', () => {
+    const doc = { a: { b: { c: { d: { e: 1 } } } } }
+    const ids = defaultExpandedIds(doc)
+    expect(ids.has(graphNodeId([]))).toBe(true)
+    expect(ids.has(graphNodeId(['a']))).toBe(false)
+  })
+
+  it('标量根：仅根 id（无实际节点）', () => {
+    expect([...defaultExpandedIds(42)]).toEqual([graphNodeId([])])
+  })
+
+  it('容器数超出节点预算：截取至预算上限', () => {
+    const doc = Object.fromEntries(
+      Array.from({ length: MAX_GRAPH_NODES + 100 }, (_, i) => [`${i}`, { v: i }]),
+    )
+    expect(defaultExpandedIds(doc).size).toBe(MAX_GRAPH_NODES)
   })
 })
 

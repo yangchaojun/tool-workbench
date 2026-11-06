@@ -14,6 +14,8 @@ export const MAX_CARD_ROWS = 100
 export const MAX_GRAPH_NODES = 1000
 /** 行内标量预览的最大字符数（与 TreeRow 的 preview 同为 80） */
 export const SCALAR_MAX_CHARS = 80
+/** 默认展开阈值：数据容器层级少于该值时默认全部展开，达到即回退为仅展开根 */
+export const EXPAND_ALL_MAX_DEPTH = 5
 
 export type GraphEntryKind = 'string' | 'number' | 'boolean' | 'null' | 'container'
 
@@ -60,6 +62,35 @@ export interface GraphModel {
 /** 节点 id（pathKey([]) 为空串，加前缀避免 Vue Flow 出现空 id） */
 export function graphNodeId(path: JsonPath): string {
   return `n:${pathKey(path)}`
+}
+
+/**
+ * 默认展开集合：容器层级少于 EXPAND_ALL_MAX_DEPTH（少于 5 层）时收集全部容器 id
+ * （含空容器，buildGraph 对其自然忽略）；达到阈值即整体回退为仅展开根。
+ * 收集预算与节点预算一致（MAX_GRAPH_NODES）——多出的容器图上也放不下，
+ * 耗尽后保留已收集部分，超出部分由 buildGraph 的截断提示交代。
+ */
+export function defaultExpandedIds(data: unknown): Set<string> {
+  const rootOnly = new Set([graphNodeId([])])
+  if (data === null || typeof data !== 'object') return rootOnly
+  const ids = new Set<string>([graphNodeId([])])
+  return collect(data, []) ? ids : rootOnly
+
+  function collect(value: object, path: JsonPath): boolean {
+    // path.length + 1 = 该容器的层级；触达第 EXPAND_ALL_MAX_DEPTH 层容器即判定层级超限
+    if (path.length + 1 >= EXPAND_ALL_MAX_DEPTH) return false
+    const children = Array.isArray(value)
+      ? (value as unknown[]).map((v, i) => [String(i), v] as const)
+      : Object.entries(value as Record<string, unknown>)
+    for (const [key, child] of children) {
+      if (child === null || typeof child !== 'object') continue
+      if (ids.size >= MAX_GRAPH_NODES) return true
+      const childPath = [...path, key]
+      ids.add(graphNodeId(childPath))
+      if (!collect(child, childPath)) return false
+    }
+    return true
+  }
 }
 
 /** 标量预览：与 TreeRow 的 preview 同约定（string 带引号、超长截断） */

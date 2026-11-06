@@ -1,5 +1,5 @@
 <script setup lang="ts">
-import { computed, ref } from 'vue'
+import { computed, ref, watch } from 'vue'
 import { Position, VueFlow } from '@vue-flow/core'
 import type { NodeProps } from '@vue-flow/core'
 import { Background } from '@vue-flow/background'
@@ -12,7 +12,7 @@ import '@vue-flow/controls/dist/style.css'
 import '@vue-flow/minimap/dist/style.css'
 
 import { useJsonEditorStore } from '../stores/jsonEditor'
-import { buildGraph, graphNodeId, MAX_GRAPH_NODES } from './buildGraph'
+import { buildGraph, defaultExpandedIds, graphNodeId, MAX_GRAPH_NODES } from './buildGraph'
 import type { GraphEntry, GraphNodeModel } from './buildGraph'
 import { layoutGraph, NODE_WIDTH } from './layout'
 import GraphNodeCard from './GraphNodeCard.vue'
@@ -20,12 +20,23 @@ import type { JsonPath } from '../editor/mutations'
 
 /**
  * 图谱面板：数据源的容器结构 → 卡片节点图（Vue Flow + dagre 层次布局）。
- * 缩放 / 平移 / 小地图由 Vue Flow 提供；展开记忆会话内按路径保留（与树形视图同语义）。
+ * 缩放 / 平移 / 小地图由 Vue Flow 提供；展开状态按路径记忆（与树形视图同语义）：
+ * 默认按「层级少于 5 层全展开」规则生成，用户手动展开/收起后即接管、不再自动重置。
  */
 
 const store = useJsonEditorStore()
 
-const expandedIds = ref<ReadonlySet<string>>(new Set([graphNodeId([])]))
+const userTouched = ref(false)
+
+const expandedIds = ref<ReadonlySet<string>>(defaultExpandedIds(store.data))
+
+// 数据源变化且用户尚未手动干预时，按默认展开规则重新生成（打字编辑的防抖校验也算）
+watch(
+  () => store.data,
+  (data) => {
+    if (!userTouched.value) expandedIds.value = defaultExpandedIds(data)
+  },
+)
 
 const graph = computed(() => (store.hasData ? buildGraph(store.data, expandedIds.value) : null))
 
@@ -52,6 +63,7 @@ function toggleEntry(nodePath: JsonPath, entry: GraphEntry) {
   if (entry.containerType === null || entry.childCount === 0) return
   // 截断后禁止再展开（收起不受限），与 buildGraph 的预算语义一致
   if (graph.value?.truncated === true && entry.childId === null) return
+  userTouched.value = true
   const childId = graphNodeId([...nodePath, entry.key])
   const next = new Set(expandedIds.value)
   if (entry.childId !== null) next.delete(childId)
