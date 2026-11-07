@@ -220,11 +220,6 @@ function pickFile() {
         <NRadioButton value="edit">编辑</NRadioButton>
         <NRadioButton value="diff">对比</NRadioButton>
       </NRadioGroup>
-      <!-- 数据面板视图切换（仅编辑模式；对比模式整区替换） -->
-      <NRadioGroup v-if="store.mode === 'edit'" v-model:value="rightView" size="small">
-        <NRadioButton value="graph">图谱</NRadioButton>
-        <NRadioButton value="tree">树形</NRadioButton>
-      </NRadioGroup>
       <div class="min-w-4 flex-1" />
       <!-- 主工具栏 -->
       <template v-if="store.mode === 'edit'">
@@ -320,6 +315,16 @@ function pickFile() {
           立即校验
         </NButton>
       </template>
+      <!-- 数据面板视图切换：状态栏右端、右面板正上方（仅宽屏编辑模式；对比模式整区替换） -->
+      <NRadioGroup
+        v-if="wide && store.mode === 'edit'"
+        v-model:value="rightView"
+        size="small"
+        class="ml-auto"
+      >
+        <NRadioButton value="graph">图谱</NRadioButton>
+        <NRadioButton value="tree">树形</NRadioButton>
+      </NRadioGroup>
     </div>
 
     <!-- 主区 -->
