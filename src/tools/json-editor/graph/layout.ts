@@ -8,8 +8,11 @@
 import { graphNodeId } from './buildGraph'
 import type { GraphNodeModel } from './buildGraph'
 
-/** 卡片宽度（px），也是 MiniMap / 布局的唯一宽度源 */
+/** 卡片宽度（px）：常规节点的唯一宽度源；表格节点按列数另计（见 nodeWidth） */
 export const NODE_WIDTH = 280
+/** 表格节点：索引列 / 数据列宽（px） */
+export const TABLE_INDEX_COL = 56
+export const TABLE_COL = 112
 /** 卡片行高（px）：GraphNodeCard 的行渲染必须与此一致 */
 export const ROW_H = 28
 /** 层间距 / 同层子树间距（px） */
@@ -18,15 +21,23 @@ export const NODE_SEP = 28
 /** 画布内边距：布局结果外扩，避免贴边 */
 export const GRAPH_PADDING = 40
 
-/** 卡片高度 = 行数 × ROW_H（root-scalar 单行；空容器占位一行；截断含尾行） */
+/** 卡片高度 = 行数 × ROW_H（root-scalar 单行；空容器占位一行；截断含尾行；表格含表头） */
 export function nodeHeight(node: GraphNodeModel): number {
   const rows =
     node.type === 'root-scalar'
       ? 1
-      : node.entries.length === 0
-        ? 1
-        : node.entries.length + (node.truncatedRows ? 1 : 0)
-  return rows * ROW_H
+      : node.tableColumns !== null
+        ? 1 + node.tableCells.length + (node.truncatedRows ? 1 : 0)
+        : node.entries.length === 0
+          ? 1
+          : node.entries.length + (node.truncatedRows ? 1 : 0)
+  return Math.max(rows, 1) * ROW_H
+}
+
+/** 节点宽度：常规卡片固定；表格节点 = 索引列 + 数据列 */
+export function nodeWidth(node: GraphNodeModel): number {
+  if (node.tableColumns === null) return NODE_WIDTH
+  return TABLE_INDEX_COL + node.tableColumns.length * TABLE_COL
 }
 
 export interface GraphPosition {
@@ -37,6 +48,20 @@ export interface GraphPosition {
 /** 放置整棵树，返回每个节点的左上角坐标（nodes 由 buildGraph 按 DFS 序给出） */
 export function layoutGraph(nodes: readonly GraphNodeModel[]): Map<string, GraphPosition> {
   const positions = new Map<string, GraphPosition>()
+
+  // 每层的横向步进 = 该层最宽节点（表格节点可比普通卡片宽）
+  const maxDepth = nodes.reduce((depth, node) => Math.max(depth, node.path.length), 0)
+  const strides = Array.from<number>({ length: maxDepth + 1 }).fill(NODE_WIDTH)
+  for (const node of nodes) {
+    strides[node.path.length] = Math.max(strides[node.path.length]!, nodeWidth(node))
+  }
+  const xByDepth: number[] = []
+  let x = GRAPH_PADDING
+  for (let depth = 0; depth <= maxDepth; depth++) {
+    xByDepth.push(x)
+    x += strides[depth]! + RANK_SEP
+  }
+
   const byId = new Map(nodes.map((node) => [node.id, node]))
   const childrenOf = new Map<string, GraphNodeModel[]>()
   const roots: GraphNodeModel[] = []
@@ -57,7 +82,7 @@ export function layoutGraph(nodes: readonly GraphNodeModel[]): Map<string, Graph
 
   /** 放置 node 及其子树（top = 卡片顶部 y），返回子树总高度 */
   function place(node: GraphNodeModel, top: number, depth: number): number {
-    positions.set(node.id, { x: GRAPH_PADDING + depth * (NODE_WIDTH + RANK_SEP), y: top })
+    positions.set(node.id, { x: xByDepth[depth]!, y: top })
     const cardHeight = nodeHeight(node)
     const children = childrenOf.get(node.id) ?? []
     if (children.length === 0) return cardHeight

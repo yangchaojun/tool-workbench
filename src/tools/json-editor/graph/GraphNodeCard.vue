@@ -2,8 +2,8 @@
 import { computed, ref } from 'vue'
 import { Handle, Position } from '@vue-flow/core'
 
-import type { GraphEntry, GraphNodeModel } from './buildGraph'
-import { ROW_H } from './layout'
+import type { GraphEntry, GraphNodeModel, TableCell } from './buildGraph'
+import { ROW_H, TABLE_INDEX_COL } from './layout'
 
 /**
  * 图谱卡片节点：对象/数组渲染为行列表（与树形视图同款语法四色）。
@@ -30,9 +30,10 @@ function badge(entry: GraphEntry): string {
   return entry.containerType === 'array' ? `[${entry.childCount}]` : `{${entry.childCount}}`
 }
 
-const tailLabel = computed(() =>
-  props.model.truncatedRows ? `… 还有 ${props.model.totalEntries - props.model.entries.length} 项` : '',
-)
+function onContainerRowClick(entry: GraphEntry) {
+  if (entry.childCount === 0) return
+  emit('toggle', entry)
+}
 
 // ── 点击复制 key（TreeRow 同款瞬时反馈）────────────────────────
 const copiedKey = ref<string | null>(null)
@@ -55,10 +56,23 @@ function onScalarRowClick(entry: GraphEntry) {
   void copyKey(entry)
 }
 
-function onContainerRowClick(entry: GraphEntry) {
-  if (entry.childCount === 0) return
-  emit('toggle', entry)
-}
+// ── 表格节点单元格 ─────────────────────────────────────────────
+const cellClass = (cell: TableCell) =>
+  ({
+    string: 'text-json-string',
+    number: 'text-json-number',
+    boolean: 'text-json-boolean',
+    null: 'text-json-null',
+  })[cell.kind]
+
+/** 可见行数（表格节点为数据行数，常规卡片为 entries.length） */
+const visibleRowCount = computed(() =>
+  props.model.tableColumns !== null ? props.model.tableCells.length : props.model.entries.length,
+)
+
+const tailLabel = computed(() =>
+  props.model.truncatedRows ? `… 还有 ${props.model.totalEntries - visibleRowCount.value} 项` : '',
+)
 </script>
 
 <template>
@@ -80,10 +94,44 @@ function onContainerRowClick(entry: GraphEntry) {
     </div>
 
     <template v-else>
-      <div v-if="model.entries.length === 0" class="flex h-7 items-center px-3 text-mute">
-        {{ emptyLabel }}
-      </div>
-      <template v-for="entry in model.entries" :key="entry.key">
+      <!-- 表格节点：对象数组（元素全为统一标量对象）内联为网格 -->
+      <template v-if="model.tableColumns !== null">
+        <div class="flex h-7 border-b border-border bg-muted/60">
+          <span class="table-index-cell" :style="{ width: `${TABLE_INDEX_COL}px` }" />
+          <span
+            v-for="column in model.tableColumns"
+            :key="column"
+            class="table-data-cell truncate font-medium text-foreground"
+            :title="column"
+          >
+            {{ column }}
+          </span>
+        </div>
+        <div
+          v-for="(row, rowIndex) in model.tableCells"
+          :key="rowIndex"
+          class="flex h-7 border-b border-border last:border-b-0"
+        >
+          <span
+            class="table-index-cell text-mute"
+            :style="{ width: `${TABLE_INDEX_COL}px` }"
+          >{{ rowIndex }}</span>
+          <span
+            v-for="(cell, columnIndex) in row"
+            :key="columnIndex"
+            class="table-data-cell truncate"
+            :class="cellClass(cell)"
+            :title="cell.value"
+          >
+            {{ cell.value }}
+          </span>
+        </div>
+      </template>
+      <template v-else>
+        <div v-if="model.entries.length === 0" class="flex h-7 items-center px-3 text-mute">
+          {{ emptyLabel }}
+        </div>
+        <template v-for="entry in model.entries" :key="entry.key">
         <!-- 容器行：点击展开/收起子卡片；已展开行在右缘持有行级连线锚点 -->
         <button
           v-if="entry.containerType !== null"
@@ -134,11 +182,12 @@ function onContainerRowClick(entry: GraphEntry) {
             {{ entry.value }}
           </span>
         </div>
+        </template>
+        <!-- 行数截断尾行 -->
+        <div v-if="model.truncatedRows" class="flex h-7 items-center px-3 text-mute">
+          {{ tailLabel }}
+        </div>
       </template>
-      <!-- 行数截断尾行 -->
-      <div v-if="model.truncatedRows" class="flex h-7 items-center px-3 text-mute">
-        {{ tailLabel }}
-      </div>
     </template>
   </div>
 </template>
@@ -151,5 +200,27 @@ function onContainerRowClick(entry: GraphEntry) {
   border: none;
   background: transparent;
   pointer-events: none;
+}
+
+/* 表格节点：索引列定宽（TABLE_INDEX_COL，与布局宽度一致）、数据列均分，网格线用 hairline */
+.table-index-cell {
+  display: flex;
+  flex-shrink: 0;
+  align-items: center;
+  justify-content: center;
+  border-right: 1px solid var(--color-border);
+  padding: 0 6px;
+}
+.table-data-cell {
+  display: flex;
+  min-width: 0;
+  flex: 1 1 0;
+  align-items: center;
+  justify-content: flex-end;
+  border-right: 1px solid var(--color-border);
+  padding: 0 10px;
+}
+.table-data-cell:last-child {
+  border-right: none;
 }
 </style>

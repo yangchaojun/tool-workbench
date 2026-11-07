@@ -14,7 +14,7 @@ import '@vue-flow/minimap/dist/style.css'
 import { useJsonEditorStore } from '../stores/jsonEditor'
 import { buildGraph, defaultExpandedIds, graphNodeId, MAX_GRAPH_NODES } from './buildGraph'
 import type { GraphEntry, GraphNodeModel } from './buildGraph'
-import { layoutGraph, NODE_WIDTH } from './layout'
+import { layoutGraph, nodeWidth } from './layout'
 import GraphNodeCard from './GraphNodeCard.vue'
 import type { JsonPath } from '../editor/mutations'
 
@@ -49,7 +49,7 @@ const flowNodes = computed(() => {
     type: 'json-card',
     position: positions.get(node.id) ?? { x: 0, y: 0 },
     data: node,
-    width: NODE_WIDTH,
+    width: nodeWidth(node),
     sourcePosition: Position.Right,
     targetPosition: Position.Left,
   }))

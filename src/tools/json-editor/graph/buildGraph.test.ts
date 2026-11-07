@@ -12,11 +12,12 @@ import {
 const ROOT = graphNodeId([])
 
 /** 收集数据中全部容器路径的节点 id（测试辅助） */
-function collectContainerPaths(value: unknown, path: string[], acc: Set<string>): void {
-  if (value === null || typeof value !== 'object') return
+function collectContainerPaths(value: unknown, path: string[], acc: Set<string>): Set<string> {
+  if (value === null || typeof value !== 'object') return acc
   acc.add(graphNodeId(path))
   if (Array.isArray(value)) value.forEach((v, i) => collectContainerPaths(v, [...path, String(i)], acc))
   else for (const [k, v] of Object.entries(value)) collectContainerPaths(v, [...path, k], acc)
+  return acc
 }
 
 describe('scalarPreview', () => {
@@ -129,6 +130,45 @@ describe('buildGraph', () => {
     expect(graph.nodes[0].entries).toHaveLength(MAX_CARD_ROWS)
     expect(graph.nodes[0].truncatedRows).toBe(true)
     expect(graph.nodes[0].totalEntries).toBe(MAX_CARD_ROWS + 5)
+  })
+
+  it('对象数组（元素全为统一标量对象）→ 表格节点：列取并集、无子卡片', () => {
+    const doc = { rows: [{ h1: 11, h2: 12 }, { h1: 21, h3: 23 }] }
+    const graph = buildGraph(doc, collectContainerPaths(doc, [], new Set()))
+    const rows = graph.nodes.find((n) => n.id === graphNodeId(['rows']))
+    expect(rows).toMatchObject({
+      tableColumns: ['h1', 'h2', 'h3'],
+      totalEntries: 2,
+    })
+    // 单元格对齐列：缺省列补空串
+    expect(rows?.tableCells[0]).toEqual([
+      { kind: 'number', value: '11' },
+      { kind: 'number', value: '12' },
+      { kind: 'null', value: '' },
+    ])
+    expect(rows?.tableCells[1][2]).toEqual({ kind: 'number', value: '23' })
+    // 元素不再生成子卡片
+    expect(graph.nodes).toHaveLength(2)
+    expect(graph.edges).toHaveLength(1)
+  })
+
+  it('元素含标量或容器值时回退常规卡片模式', () => {
+    const mixed = { list: [{ a: 1 }, 'text'], nested: [{ a: { deep: 1 } }] }
+    const graph = buildGraph(mixed, collectContainerPaths(mixed, [], new Set()))
+    for (const node of graph.nodes) {
+      expect(node.tableColumns).toBeNull()
+    }
+  })
+
+  it('表格行数超限：截断 + 尾行计数', () => {
+    const doc = {
+      rows: Array.from({ length: MAX_CARD_ROWS + 3 }, (_, i) => ({ v: i })),
+    }
+    const graph = buildGraph(doc, new Set([graphNodeId(['rows'])]))
+    const rows = graph.nodes.find((n) => n.id === graphNodeId(['rows']))
+    expect(rows?.tableCells).toHaveLength(MAX_CARD_ROWS)
+    expect(rows?.truncatedRows).toBe(true)
+    expect(rows?.totalEntries).toBe(MAX_CARD_ROWS + 3)
   })
 
   it('节点预算耗尽：truncated 置真且子树不再展开', () => {

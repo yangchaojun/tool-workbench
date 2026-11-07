@@ -39,11 +39,21 @@ export interface GraphNodeModel {
   type: 'object' | 'array' | 'root-scalar'
   /** root-scalar 的预览文本；容器节点为 null */
   scalarPreview: string | null
-  /** 条目超出 MAX_CARD_ROWS：尾行展示真实数量 */
+  /** 条目超出 MAX_CARD_ROWS：尾行展示真实数量（表格节点为数据行截断） */
   truncatedRows: boolean
   /** 卡片实际条目数（截断前） */
   totalEntries: number
   entries: GraphEntry[]
+  /** 表格节点（元素全为统一标量对象的对象数组）：列集合；null 表示非表格节点 */
+  tableColumns: string[] | null
+  /** 表格节点：每行与 tableColumns 对齐的单元格（value 为空串表示该行缺省此列） */
+  tableCells: TableCell[][]
+}
+
+/** 表格节点单元格 */
+export interface TableCell {
+  kind: 'string' | 'number' | 'boolean' | 'null'
+  value: string
 }
 
 export interface GraphEdgeModel {
@@ -106,6 +116,39 @@ export function scalarPreview(value: unknown): string {
 }
 
 /**
+ * 对象数组 → 表格模型：元素全为对象、值全为标量时成立（列取各行键的并集，
+ * 按首次出现排序，缺省列补空单元格）。否则返回 null，走常规卡片模式。
+ */
+function tableModel(
+  elements: readonly unknown[],
+): { columns: string[]; cells: TableCell[][] } | null {
+  if (elements.length === 0) return null
+  const columns: string[] = []
+  for (const element of elements) {
+    if (element === null || typeof element !== 'object' || Array.isArray(element)) return null
+    for (const key of Object.keys(element as Record<string, unknown>)) {
+      if (!columns.includes(key)) columns.push(key)
+    }
+  }
+  if (columns.length === 0) return null
+  const cells: TableCell[][] = []
+  for (const element of elements) {
+    const record = element as Record<string, unknown>
+    const row: TableCell[] = []
+    for (const column of columns) {
+      const value = column in record ? record[column] : null
+      if (value !== null && typeof value === 'object') return null
+      row.push({
+        kind: value === null ? 'null' : (typeof value as TableCell['kind']),
+        value: column in record ? scalarPreview(value) : '',
+      })
+    }
+    cells.push(row)
+  }
+  return { columns, cells }
+}
+
+/**
  * 构建图：从根开始沿 expandedIds 递归收集容器节点（DFS，根卡片总在第一位）。
  * 收起父卡片不移除后代 id——与 TreePane 一致，重新展开时恢复子树记忆。
  * 预算耗尽即停止递归并置 truncated：未渲染的展开行为收起态且点击无效。
@@ -124,6 +167,8 @@ export function buildGraph(data: unknown, expandedIds: ReadonlySet<string>): Gra
       truncatedRows: false,
       totalEntries: 0,
       entries: [],
+      tableColumns: null,
+      tableCells: [],
     })
     return { nodes, edges, truncated }
   }
@@ -145,7 +190,21 @@ export function buildGraph(data: unknown, expandedIds: ReadonlySet<string>): Gra
       truncatedRows: entriesRaw.length > MAX_CARD_ROWS,
       totalEntries: entriesRaw.length,
       entries: [],
+      tableColumns: null,
+      tableCells: [],
     }
+
+    // 对象数组且元素全为统一标量对象 → 表格节点：数据行内联呈现，元素不再生成子卡片
+    if (kind === 'array') {
+      const table = tableModel(value as unknown[])
+      if (table !== null) {
+        node.tableColumns = table.columns
+        node.tableCells = table.cells.slice(0, MAX_CARD_ROWS)
+        nodes.push(node)
+        return
+      }
+    }
+
     nodes.push(node)
 
     for (const [key, child] of entriesRaw.slice(0, MAX_CARD_ROWS)) {

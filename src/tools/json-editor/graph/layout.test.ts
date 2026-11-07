@@ -1,7 +1,17 @@
 import { describe, expect, it } from 'vitest'
 
 import { buildGraph, graphNodeId } from './buildGraph'
-import { GRAPH_PADDING, layoutGraph, NODE_SEP, NODE_WIDTH, RANK_SEP, ROW_H } from './layout'
+import {
+  GRAPH_PADDING,
+  layoutGraph,
+  NODE_SEP,
+  NODE_WIDTH,
+  RANK_SEP,
+  ROW_H,
+  TABLE_COL,
+  TABLE_INDEX_COL,
+  nodeWidth,
+} from './layout'
 
 const allIds = (data: unknown) => {
   const ids = new Set<string>()
@@ -52,5 +62,20 @@ describe('layoutGraph', () => {
     const bY = positions.get(graphNodeId(['b']))!.y
     expect(deepY).toBeGreaterThanOrEqual(aY)
     expect(bY).toBeGreaterThan(deepY)
+  })
+
+  it('表格节点宽度 = 索引列 + 数据列；所在层步进取该层最宽节点', () => {
+    const doc = { rows: [{ h1: 11, h2: 12, h3: 13 }], plain: { inner: { a: 1 } } }
+    const graph = buildGraph(doc, allIds(doc))
+    const rowsNode = graph.nodes.find((n) => n.id === graphNodeId(['rows']))!
+    const plainNode = graph.nodes.find((n) => n.id === graphNodeId(['plain']))!
+    expect(nodeWidth(rowsNode)).toBe(TABLE_INDEX_COL + 3 * TABLE_COL)
+    expect(nodeWidth(plainNode)).toBe(NODE_WIDTH)
+
+    const positions = layoutGraph(graph.nodes)
+    // 同层等 x；下一层 x 由该层最宽节点（表格 392 > 卡片 280）决定
+    expect(positions.get(graphNodeId(['rows']))!.x).toBe(positions.get(graphNodeId(['plain']))!.x)
+    const inner = positions.get(graphNodeId(['plain', 'inner']))!
+    expect(inner.x).toBe(GRAPH_PADDING + NODE_WIDTH + RANK_SEP + nodeWidth(rowsNode) + RANK_SEP)
   })
 })
