@@ -47,8 +47,8 @@ onMounted(() => mql.addEventListener('change', onMqlChange))
 onBeforeUnmount(() => mql.removeEventListener('change', onMqlChange))
 
 const activeTab = ref<'text' | 'tree' | 'graph'>('text')
-/** 编辑模式下数据面板的视图：树形 / 图谱（宽屏并排、窄屏 Tab 同一状态语义） */
-const rightView = ref<'tree' | 'graph'>('tree')
+/** 编辑模式下数据面板的视图：图谱 / 树形（默认图谱，切换按钮在顶部 header） */
+const rightView = ref<'tree' | 'graph'>('graph')
 watch(activeTab, (tab) => {
   if (tab === 'text') nextTick(() => editorPaneRef.value?.remeasure())
 })
@@ -220,6 +220,11 @@ function pickFile() {
         <NRadioButton value="edit">编辑</NRadioButton>
         <NRadioButton value="diff">对比</NRadioButton>
       </NRadioGroup>
+      <!-- 数据面板视图切换（仅编辑模式；对比模式整区替换） -->
+      <NRadioGroup v-if="store.mode === 'edit'" v-model:value="rightView" size="small">
+        <NRadioButton value="graph">图谱</NRadioButton>
+        <NRadioButton value="tree">树形</NRadioButton>
+      </NRadioGroup>
       <div class="min-w-4 flex-1" />
       <!-- 主工具栏 -->
       <template v-if="store.mode === 'edit'">
@@ -331,12 +336,6 @@ function pickFile() {
           <EditorPane ref="editorPaneRef" />
         </div>
         <div class="flex h-full min-h-0 min-w-0 flex-1 flex-col">
-          <div class="mb-2 flex shrink-0 items-center">
-            <NRadioGroup v-model:value="rightView" size="small">
-              <NRadioButton value="tree">树形</NRadioButton>
-              <NRadioButton value="graph">图谱</NRadioButton>
-            </NRadioGroup>
-          </div>
           <TreePane v-show="rightView === 'tree'" class="min-h-0 flex-1" />
           <GraphPane v-if="rightView === 'graph'" class="min-h-0 flex-1" />
         </div>
