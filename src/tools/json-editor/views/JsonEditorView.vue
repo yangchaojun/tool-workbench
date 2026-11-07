@@ -213,16 +213,9 @@ function pickFile() {
 <template>
   <!-- lg（与宽屏断点一致）下按视口定高：分栏区 flex-1 精确填满到底部（容器 md:py-10 = 上下各 40px） -->
   <section class="flex min-h-0 flex-col lg:h-[calc(100dvh-80px)]">
-    <header class="mb-6 shrink-0">
-      <h1 class="text-2xl font-medium tracking-tight">JSON 编辑器</h1>
-      <p class="mt-1 text-sm text-muted-foreground">
-        粘贴或上传 JSON：格式化 / 压缩、精确定位与容错修复、树形增删改与排序、结构图谱可视化、查找替换、查询与 Diff 对比、文档历史与远程加载。
-        数据默认不出浏览器；仅「历史」面板中的远程加载（URL 拉取）会在你点击时发起一次网络请求。
-      </p>
-    </header>
-
-    <!-- 顶层模式：编辑 / 对比 -->
-    <div class="mb-3 flex shrink-0 flex-wrap items-center gap-2">
+    <!-- 标题 + 工具栏（编辑 / 对比 与操作按钮）同行，扩大工具区高度 -->
+    <header class="mb-3 flex shrink-0 flex-wrap items-center gap-x-2 gap-y-1">
+      <h1 class="mr-3 text-2xl font-medium tracking-tight">JSON 编辑器</h1>
       <NRadioGroup v-model:value="store.mode" size="small">
         <NRadioButton value="edit">编辑</NRadioButton>
         <NRadioButton value="diff">对比</NRadioButton>
@@ -293,7 +286,7 @@ function pickFile() {
         </NDropdown>
         <input ref="fileInput" type="file" class="hidden" @change="onFilePicked" />
       </template>
-    </div>
+    </header>
 
     <!-- 状态栏 -->
     <div class="mb-3 flex min-h-6 shrink-0 flex-wrap items-center gap-x-3 gap-y-1 text-sm">
