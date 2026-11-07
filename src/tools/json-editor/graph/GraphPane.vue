@@ -43,7 +43,7 @@ const graph = computed(() => (store.hasData ? buildGraph(store.data, expandedIds
 const flowNodes = computed(() => {
   const g = graph.value
   if (g === null) return []
-  const positions = layoutGraph(g.nodes, g.edges)
+  const positions = layoutGraph(g.nodes)
   return g.nodes.map((node) => ({
     id: node.id,
     type: 'json-card',
