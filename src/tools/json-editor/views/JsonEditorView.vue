@@ -61,6 +61,49 @@ watch(
 
 const paneHeightClass = 'h-[560px] min-h-[420px] xl:h-[calc(100vh-360px)]'
 
+// ── 左右分栏：可拖动 splitter ──────────────────────────────────
+
+const SPLIT_MIN_PCT = 20
+const SPLIT_MAX_PCT = 80
+
+const leftPct = ref(50)
+const splitArea = ref<HTMLElement | null>(null)
+const splitDragging = ref(false)
+
+function clampPct(pct: number): number {
+  return Math.min(SPLIT_MAX_PCT, Math.max(SPLIT_MIN_PCT, pct))
+}
+
+function onSplitDown(event: PointerEvent) {
+  event.preventDefault()
+  splitDragging.value = true
+  ;(event.currentTarget as HTMLElement).setPointerCapture(event.pointerId)
+}
+
+function onSplitMove(event: PointerEvent) {
+  if (!splitDragging.value) return
+  const rect = splitArea.value?.getBoundingClientRect()
+  if (!rect) return
+  leftPct.value = clampPct(((event.clientX - rect.left) / rect.width) * 100)
+}
+
+function onSplitUp(event: PointerEvent) {
+  if (!splitDragging.value) return
+  splitDragging.value = false
+  ;(event.currentTarget as HTMLElement).releasePointerCapture(event.pointerId)
+  editorPaneRef.value?.remeasure()
+}
+
+function onSplitKeydown(event: KeyboardEvent) {
+  if (event.key === 'ArrowLeft') {
+    leftPct.value = clampPct(leftPct.value - 2)
+    event.preventDefault()
+  } else if (event.key === 'ArrowRight') {
+    leftPct.value = clampPct(leftPct.value + 2)
+    event.preventDefault()
+  }
+}
+
 // ── 状态栏 ─────────────────────────────────────────────────────
 
 const status = computed(() => {
@@ -283,9 +326,38 @@ function pickFile() {
     <!-- 主区 -->
     <DiffView v-if="store.mode === 'diff'" />
     <template v-else>
-      <div v-if="wide" :class="paneHeightClass" class="grid grid-cols-2 gap-4">
-        <EditorPane ref="editorPaneRef" />
-        <div class="flex h-full min-h-0 flex-col">
+      <div
+        v-if="wide"
+        ref="splitArea"
+        :class="[paneHeightClass, splitDragging ? 'cursor-col-resize select-none' : '']"
+        class="flex min-h-0"
+      >
+        <div class="min-w-0" :style="{ width: `${leftPct}%` }">
+          <EditorPane ref="editorPaneRef" />
+        </div>
+        <div
+          role="separator"
+          aria-orientation="vertical"
+          aria-label="拖动调整左右分栏宽度，双击恢复对半"
+          tabindex="0"
+          class="group flex shrink-0 cursor-col-resize select-none justify-center px-2 focus-visible:outline-none"
+          @pointerdown="onSplitDown"
+          @pointermove="onSplitMove"
+          @pointerup="onSplitUp"
+          @pointercancel="onSplitUp"
+          @dblclick="leftPct = 50"
+          @keydown="onSplitKeydown"
+        >
+          <div
+            class="h-full w-px rounded transition-colors duration-150"
+            :class="
+              splitDragging
+                ? 'bg-accent'
+                : 'bg-border group-hover:bg-border-hover group-focus-visible:bg-accent'
+            "
+          />
+        </div>
+        <div class="flex h-full min-h-0 min-w-0 flex-1 flex-col">
           <div class="mb-2 flex shrink-0 items-center">
             <NRadioGroup v-model:value="rightView" size="small">
               <NRadioButton value="tree">树形</NRadioButton>
