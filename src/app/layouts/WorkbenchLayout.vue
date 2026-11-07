@@ -88,7 +88,7 @@ watch(
       <div
         :class="
           contentFullWidth
-            ? 'w-full px-4 py-6 md:px-8 md:py-10'
+            ? 'w-full px-3 py-4 md:px-5 md:py-5'
             : 'mx-auto w-full max-w-5xl px-4 py-6 md:px-8 md:py-10'
         "
       >

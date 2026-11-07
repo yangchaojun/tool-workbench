@@ -26,6 +26,7 @@ import { escapeJsonText, unicodeDecode, unicodeEncode, unescapeJsonText } from '
 import { repairJson } from '../parser/repair'
 import EditorPane from '../components/EditorPane.vue'
 import TreePane from '../components/TreePane.vue'
+import GraphPane from '../graph/GraphPane.vue'
 import RepairModal from '../components/RepairModal.vue'
 import HistoryPanel from '../components/HistoryPanel.vue'
 import LoadConfirmModal from '../components/LoadConfirmModal.vue'
@@ -45,7 +46,9 @@ const onMqlChange = (event: MediaQueryListEvent) => {
 onMounted(() => mql.addEventListener('change', onMqlChange))
 onBeforeUnmount(() => mql.removeEventListener('change', onMqlChange))
 
-const activeTab = ref<'text' | 'tree'>('text')
+const activeTab = ref<'text' | 'tree' | 'graph'>('text')
+/** 编辑模式下数据面板的视图：图谱 / 树形（默认图谱，切换按钮在顶部 header） */
+const rightView = ref<'tree' | 'graph'>('graph')
 watch(activeTab, (tab) => {
   if (tab === 'text') nextTick(() => editorPaneRef.value?.remeasure())
 })
@@ -57,6 +60,49 @@ watch(
 )
 
 const paneHeightClass = 'h-[560px] min-h-[420px] xl:h-[calc(100vh-360px)]'
+
+// ── 左右分栏：可拖动 splitter ──────────────────────────────────
+
+const SPLIT_MIN_PCT = 20
+const SPLIT_MAX_PCT = 80
+
+const leftPct = ref(50)
+const splitArea = ref<HTMLElement | null>(null)
+const splitDragging = ref(false)
+
+function clampPct(pct: number): number {
+  return Math.min(SPLIT_MAX_PCT, Math.max(SPLIT_MIN_PCT, pct))
+}
+
+function onSplitDown(event: PointerEvent) {
+  event.preventDefault()
+  splitDragging.value = true
+  ;(event.currentTarget as HTMLElement).setPointerCapture(event.pointerId)
+}
+
+function onSplitMove(event: PointerEvent) {
+  if (!splitDragging.value) return
+  const rect = splitArea.value?.getBoundingClientRect()
+  if (!rect) return
+  leftPct.value = clampPct(((event.clientX - rect.left) / rect.width) * 100)
+}
+
+function onSplitUp(event: PointerEvent) {
+  if (!splitDragging.value) return
+  splitDragging.value = false
+  ;(event.currentTarget as HTMLElement).releasePointerCapture(event.pointerId)
+  editorPaneRef.value?.remeasure()
+}
+
+function onSplitKeydown(event: KeyboardEvent) {
+  if (event.key === 'ArrowLeft') {
+    leftPct.value = clampPct(leftPct.value - 2)
+    event.preventDefault()
+  } else if (event.key === 'ArrowRight') {
+    leftPct.value = clampPct(leftPct.value + 2)
+    event.preventDefault()
+  }
+}
 
 // ── 状态栏 ─────────────────────────────────────────────────────
 
@@ -165,17 +211,11 @@ function pickFile() {
 </script>
 
 <template>
-  <section>
-    <header class="mb-6">
-      <h1 class="text-2xl font-medium tracking-tight">JSON 编辑器</h1>
-      <p class="mt-1 text-sm text-muted-foreground">
-        粘贴或上传 JSON：格式化 / 压缩、精确定位与容错修复、树形增删改与排序、查找替换、查询与 Diff 对比、文档历史与远程加载。
-        数据默认不出浏览器；仅「历史」面板中的远程加载（URL 拉取）会在你点击时发起一次网络请求。
-      </p>
-    </header>
-
-    <!-- 顶层模式：编辑 / 对比 -->
-    <div class="mb-3 flex flex-wrap items-center gap-2">
+  <!-- lg（与宽屏断点一致）下按视口定高：分栏区 flex-1 精确填满到底部（fullWidth 容器 md:py-5 = 上下各 20px） -->
+  <section class="flex min-h-0 flex-col lg:h-[calc(100dvh-40px)]">
+    <!-- 标题 + 工具栏（编辑 / 对比 与操作按钮）同行，扩大工具区高度 -->
+    <header class="mb-2 flex shrink-0 flex-wrap items-center gap-x-2 gap-y-1">
+      <h1 class="mr-3 text-2xl font-medium tracking-tight">JSON 编辑器</h1>
       <NRadioGroup v-model:value="store.mode" size="small">
         <NRadioButton value="edit">编辑</NRadioButton>
         <NRadioButton value="diff">对比</NRadioButton>
@@ -246,10 +286,10 @@ function pickFile() {
         </NDropdown>
         <input ref="fileInput" type="file" class="hidden" @change="onFilePicked" />
       </template>
-    </div>
+    </header>
 
     <!-- 状态栏 -->
-    <div class="mb-3 flex min-h-6 flex-wrap items-center gap-x-3 gap-y-1 text-sm">
+    <div class="mb-2 flex min-h-6 shrink-0 flex-wrap items-center gap-x-3 gap-y-1 text-sm">
       <span
         :class="{
           'font-medium text-destructive': status.kind === 'error',
@@ -266,7 +306,7 @@ function pickFile() {
         {{ processError }}
       </span>
       <span v-if="store.mode === 'edit' && store.dataStale" class="text-muted-foreground">
-        · 树形视图与最新文本不同步，重新校验通过后自动恢复
+        · 树形 / 图谱视图与最新文本不同步，重新校验通过后自动恢复
       </span>
       <!-- 超软上限：无论当前结果是 ok / error / 无结果，都保持手动校验入口 -->
       <template v-if="store.overSoftCap && store.input !== ''">
@@ -275,14 +315,58 @@ function pickFile() {
           立即校验
         </NButton>
       </template>
+      <!-- 数据面板视图切换：状态栏右端、右面板正上方（仅宽屏编辑模式；对比模式整区替换） -->
+      <NRadioGroup
+        v-if="wide && store.mode === 'edit'"
+        v-model:value="rightView"
+        size="small"
+        class="ml-auto"
+      >
+        <NRadioButton value="graph">图谱</NRadioButton>
+        <NRadioButton value="tree">树形</NRadioButton>
+      </NRadioGroup>
     </div>
 
     <!-- 主区 -->
     <DiffView v-if="store.mode === 'diff'" />
     <template v-else>
-      <div v-if="wide" :class="paneHeightClass" class="grid grid-cols-2 gap-4">
-        <EditorPane ref="editorPaneRef" />
-        <TreePane />
+      <!-- 两面板贴合无缝；分隔热区为覆盖接缝的透明窄条，悬停/拖动时显示强调线 -->
+      <div
+        v-if="wide"
+        ref="splitArea"
+        class="relative flex min-h-0 flex-1"
+        :class="splitDragging ? 'cursor-col-resize select-none' : ''"
+      >
+        <div class="min-w-0" :style="{ width: `${leftPct}%` }">
+          <EditorPane ref="editorPaneRef" />
+        </div>
+        <div class="flex h-full min-h-0 min-w-0 flex-1 flex-col">
+          <TreePane v-show="rightView === 'tree'" class="min-h-0 flex-1" />
+          <GraphPane v-if="rightView === 'graph'" class="min-h-0 flex-1" />
+        </div>
+        <div
+          role="separator"
+          aria-orientation="vertical"
+          aria-label="拖动调整左右分栏宽度，双击恢复对半"
+          tabindex="0"
+          class="group absolute inset-y-0 z-10 w-3 -translate-x-1/2 cursor-col-resize select-none focus-visible:outline-none"
+          :style="{ left: `${leftPct}%` }"
+          @pointerdown="onSplitDown"
+          @pointermove="onSplitMove"
+          @pointerup="onSplitUp"
+          @pointercancel="onSplitUp"
+          @dblclick="leftPct = 50"
+          @keydown="onSplitKeydown"
+        >
+          <div
+            class="mx-auto h-full w-px transition-colors duration-150"
+            :class="
+              splitDragging
+                ? 'bg-accent'
+                : 'bg-transparent group-hover:bg-accent/50 group-focus-visible:bg-accent'
+            "
+          />
+        </div>
       </div>
       <NTabs v-else v-model:value="activeTab" type="segment" size="small" class="mb-2">
         <NTabPane name="text" tab="文本" display-directive="show">
@@ -293,6 +377,11 @@ function pickFile() {
         <NTabPane name="tree" tab="树形" display-directive="show">
           <div :class="paneHeightClass">
             <TreePane />
+          </div>
+        </NTabPane>
+        <NTabPane name="graph" tab="图谱" display-directive="if">
+          <div :class="paneHeightClass">
+            <GraphPane />
           </div>
         </NTabPane>
       </NTabs>
