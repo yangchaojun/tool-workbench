@@ -211,10 +211,10 @@ function pickFile() {
 </script>
 
 <template>
-  <!-- lg（与宽屏断点一致）下按视口定高：分栏区 flex-1 精确填满到底部（容器 md:py-10 = 上下各 40px） -->
-  <section class="flex min-h-0 flex-col lg:h-[calc(100dvh-80px)]">
+  <!-- lg（与宽屏断点一致）下按视口定高：分栏区 flex-1 精确填满到底部（fullWidth 容器 md:py-5 = 上下各 20px） -->
+  <section class="flex min-h-0 flex-col lg:h-[calc(100dvh-40px)]">
     <!-- 标题 + 工具栏（编辑 / 对比 与操作按钮）同行，扩大工具区高度 -->
-    <header class="mb-3 flex shrink-0 flex-wrap items-center gap-x-2 gap-y-1">
+    <header class="mb-2 flex shrink-0 flex-wrap items-center gap-x-2 gap-y-1">
       <h1 class="mr-3 text-2xl font-medium tracking-tight">JSON 编辑器</h1>
       <NRadioGroup v-model:value="store.mode" size="small">
         <NRadioButton value="edit">编辑</NRadioButton>
@@ -289,7 +289,7 @@ function pickFile() {
     </header>
 
     <!-- 状态栏 -->
-    <div class="mb-3 flex min-h-6 shrink-0 flex-wrap items-center gap-x-3 gap-y-1 text-sm">
+    <div class="mb-2 flex min-h-6 shrink-0 flex-wrap items-center gap-x-3 gap-y-1 text-sm">
       <span
         :class="{
           'font-medium text-destructive': status.kind === 'error',
