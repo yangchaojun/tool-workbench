@@ -83,12 +83,17 @@ describe('buildGraph', () => {
   it('展开容器行：生成子卡片与连线，entry.childId 指向子卡片', () => {
     const graph = buildGraph({ a: { b: 1 }, c: 2 }, new Set([graphNodeId(['a'])]))
     expect(graph.nodes.map((n) => n.id)).toEqual([ROOT, graphNodeId(['a'])])
-    expect(graph.edges).toEqual([
-      { id: `${ROOT}~${graphNodeId(['a'])}`, source: ROOT, target: graphNodeId(['a']) },
-    ])
     const root = graph.nodes[0]
     expect(root.entries[0]).toMatchObject({ key: 'a', kind: 'container', childCount: 1, childId: graphNodeId(['a']) })
     expect(root.entries[1]).toMatchObject({ key: 'c', kind: 'number', value: '2', childId: null })
+    expect(graph.edges).toEqual([
+      {
+        id: `${ROOT}~${graphNodeId(['a'])}`,
+        source: ROOT,
+        target: graphNodeId(['a']),
+        sourceHandle: 'row:a',
+      },
+    ])
   })
 
   it('数组子项 key 为索引，计数徽标数据正确', () => {

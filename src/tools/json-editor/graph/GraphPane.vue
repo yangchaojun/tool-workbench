@@ -1,6 +1,6 @@
 <script setup lang="ts">
-import { computed, ref, watch } from 'vue'
-import { Position, VueFlow } from '@vue-flow/core'
+import { computed, nextTick, onMounted, ref, watch } from 'vue'
+import { Position, VueFlow, useVueFlow } from '@vue-flow/core'
 import type { NodeProps } from '@vue-flow/core'
 import { Background } from '@vue-flow/background'
 import { Controls } from '@vue-flow/controls'
@@ -56,7 +56,13 @@ const flowNodes = computed(() => {
 })
 
 const flowEdges = computed(() =>
-  (graph.value?.edges ?? []).map((edge) => ({ id: edge.id, source: edge.source, target: edge.target })),
+  (graph.value?.edges ?? []).map((edge) => ({
+    id: edge.id,
+    source: edge.source,
+    target: edge.target,
+    sourceHandle: edge.sourceHandle,
+    targetHandle: 't',
+  })),
 )
 
 function toggleEntry(nodePath: JsonPath, entry: GraphEntry) {
@@ -74,6 +80,12 @@ function toggleEntry(nodePath: JsonPath, entry: GraphEntry) {
 function onCardToggle(nodeProps: NodeProps, entry: GraphEntry) {
   toggleEntry((nodeProps.data as GraphNodeModel).path, entry)
 }
+
+const { updateNodeInternals } = useVueFlow()
+
+// 行级 Handle 随展开/收起增删，且节点内部测量可能早于 slot 内容挂载——图变化后强制重测
+watch(flowNodes, () => nextTick(() => updateNodeInternals()))
+onMounted(() => nextTick(() => updateNodeInternals()))
 </script>
 
 <template>

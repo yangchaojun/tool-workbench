@@ -3,11 +3,14 @@ import { computed, ref } from 'vue'
 import { Handle, Position } from '@vue-flow/core'
 
 import type { GraphEntry, GraphNodeModel } from './buildGraph'
+import { ROW_H } from './layout'
 
 /**
  * 图谱卡片节点：对象/数组渲染为行列表（与树形视图同款语法四色）。
  * 容器行点击展开/收起子卡片；标量行点击复制 key（对齐 TreeRow 的交互约定）。
  * 行高严格 28px——layout.ts 的 nodeHeight 依赖它保证连线锚点对位。
+ * 连线锚点：每个已展开的容器行在右缘持有行级 source Handle（按行居中），
+ * 子卡片在左缘首行高度持有 target Handle——连线从对应 key 的行出发（参考 Treeease）。
  */
 
 const props = defineProps<{ model: GraphNodeModel }>()
@@ -15,6 +18,9 @@ const props = defineProps<{ model: GraphNodeModel }>()
 const emit = defineEmits<{ toggle: [entry: GraphEntry] }>()
 
 const isRoot = computed(() => props.model.path.length === 0)
+
+/** 子卡片 target Handle 的纵坐标：首行中心 */
+const targetTop = `${ROW_H / 2}px`
 
 /** 空容器 / 空根的占位文案（与树形视图「空对象 / 空数组」一致） */
 const emptyLabel = computed(() => (props.model.type === 'array' ? '空数组' : '空对象'))
@@ -56,9 +62,15 @@ function onContainerRowClick(entry: GraphEntry) {
 </script>
 
 <template>
-  <div class="h-full w-full overflow-clip rounded-md border border-border bg-card font-mono text-xs shadow-card">
-    <Handle v-if="!isRoot" type="target" :position="Position.Left" class="graph-card-handle" />
-    <Handle type="source" :position="Position.Right" class="graph-card-handle" />
+  <div class="relative h-full w-full overflow-clip rounded-md border border-border bg-card font-mono text-xs shadow-card">
+    <Handle
+      v-if="!isRoot"
+      type="target"
+      :position="Position.Left"
+      id="t"
+      :style="{ top: targetTop }"
+      class="graph-card-handle"
+    />
 
     <!-- 标量根：单行值 -->
     <div v-if="model.type === 'root-scalar'" class="flex h-7 items-center justify-end px-3">
@@ -72,11 +84,11 @@ function onContainerRowClick(entry: GraphEntry) {
         {{ emptyLabel }}
       </div>
       <template v-for="entry in model.entries" :key="entry.key">
-        <!-- 容器行：点击展开/收起子卡片 -->
+        <!-- 容器行：点击展开/收起子卡片；已展开行在右缘持有行级连线锚点 -->
         <button
           v-if="entry.containerType !== null"
           type="button"
-          class="group flex h-7 w-full items-center justify-between gap-3 px-3 text-left transition-colors duration-150"
+          class="group relative flex h-7 w-full items-center justify-between gap-3 px-3 text-left transition-colors duration-150"
           :class="entry.childCount > 0 ? 'cursor-pointer hover:bg-muted' : 'cursor-default'"
           :title="entry.key"
           @click.stop="onContainerRowClick(entry)"
@@ -91,6 +103,13 @@ function onContainerRowClick(entry: GraphEntry) {
           >
             {{ badge(entry) }}
           </span>
+          <Handle
+            v-if="entry.childId !== null"
+            type="source"
+            :position="Position.Right"
+            :id="`row:${entry.key}`"
+            class="graph-card-handle"
+          />
         </button>
         <!-- 标量行：点击复制 key -->
         <div
@@ -125,11 +144,12 @@ function onContainerRowClick(entry: GraphEntry) {
 </template>
 
 <style scoped>
-/* 连接点：弱化为边缘小圆点，不参与视觉焦点 */
+/* 连线锚点：纯几何锚（参考图无圆点装饰），不参与交互 */
 .graph-card-handle {
-  width: 7px;
-  height: 7px;
-  border: 1px solid var(--color-border-hover);
-  background: var(--color-card);
+  width: 6px;
+  height: 6px;
+  border: none;
+  background: transparent;
+  pointer-events: none;
 }
 </style>

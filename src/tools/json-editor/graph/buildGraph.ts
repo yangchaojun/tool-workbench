@@ -50,6 +50,8 @@ export interface GraphEdgeModel {
   id: string
   source: string
   target: string
+  /** 源卡片上发起连线的行：`row:<entry key>`，与卡片内行级 Handle 一一对应 */
+  sourceHandle: string
 }
 
 export interface GraphModel {
@@ -166,7 +168,12 @@ export function buildGraph(data: unknown, expandedIds: ReadonlySet<string>): Gra
             const index = nodes.length
             walk(child, childPath)
             entry.childId = nodes[index].id
-            edges.push({ id: `${node.id}~${entry.childId}`, source: node.id, target: entry.childId })
+            edges.push({
+              id: `${node.id}~${entry.childId}`,
+              source: node.id,
+              target: entry.childId,
+              sourceHandle: `row:${key}`,
+            })
           } else {
             // 想展开但预算耗尽：明确标记截断，让 UI 能解释「点不动」
             truncated = true
