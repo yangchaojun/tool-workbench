@@ -211,8 +211,9 @@ function pickFile() {
 </script>
 
 <template>
-  <section>
-    <header class="mb-6">
+  <!-- lg（与宽屏断点一致）下按视口定高：分栏区 flex-1 精确填满到底部（容器 md:py-10 = 上下各 40px） -->
+  <section class="flex min-h-0 flex-col lg:h-[calc(100dvh-80px)]">
+    <header class="mb-6 shrink-0">
       <h1 class="text-2xl font-medium tracking-tight">JSON 编辑器</h1>
       <p class="mt-1 text-sm text-muted-foreground">
         粘贴或上传 JSON：格式化 / 压缩、精确定位与容错修复、树形增删改与排序、结构图谱可视化、查找替换、查询与 Diff 对比、文档历史与远程加载。
@@ -221,7 +222,7 @@ function pickFile() {
     </header>
 
     <!-- 顶层模式：编辑 / 对比 -->
-    <div class="mb-3 flex flex-wrap items-center gap-2">
+    <div class="mb-3 flex shrink-0 flex-wrap items-center gap-2">
       <NRadioGroup v-model:value="store.mode" size="small">
         <NRadioButton value="edit">编辑</NRadioButton>
         <NRadioButton value="diff">对比</NRadioButton>
@@ -295,7 +296,7 @@ function pickFile() {
     </div>
 
     <!-- 状态栏 -->
-    <div class="mb-3 flex min-h-6 flex-wrap items-center gap-x-3 gap-y-1 text-sm">
+    <div class="mb-3 flex min-h-6 shrink-0 flex-wrap items-center gap-x-3 gap-y-1 text-sm">
       <span
         :class="{
           'font-medium text-destructive': status.kind === 'error',
@@ -326,36 +327,15 @@ function pickFile() {
     <!-- 主区 -->
     <DiffView v-if="store.mode === 'diff'" />
     <template v-else>
+      <!-- 两面板贴合无缝；分隔热区为覆盖接缝的透明窄条，悬停/拖动时显示强调线 -->
       <div
         v-if="wide"
         ref="splitArea"
-        :class="[paneHeightClass, splitDragging ? 'cursor-col-resize select-none' : '']"
-        class="flex min-h-0"
+        class="relative flex min-h-0 flex-1"
+        :class="splitDragging ? 'cursor-col-resize select-none' : ''"
       >
         <div class="min-w-0" :style="{ width: `${leftPct}%` }">
           <EditorPane ref="editorPaneRef" />
-        </div>
-        <div
-          role="separator"
-          aria-orientation="vertical"
-          aria-label="拖动调整左右分栏宽度，双击恢复对半"
-          tabindex="0"
-          class="group flex shrink-0 cursor-col-resize select-none justify-center px-2 focus-visible:outline-none"
-          @pointerdown="onSplitDown"
-          @pointermove="onSplitMove"
-          @pointerup="onSplitUp"
-          @pointercancel="onSplitUp"
-          @dblclick="leftPct = 50"
-          @keydown="onSplitKeydown"
-        >
-          <div
-            class="h-full w-px rounded transition-colors duration-150"
-            :class="
-              splitDragging
-                ? 'bg-accent'
-                : 'bg-border group-hover:bg-border-hover group-focus-visible:bg-accent'
-            "
-          />
         </div>
         <div class="flex h-full min-h-0 min-w-0 flex-1 flex-col">
           <div class="mb-2 flex shrink-0 items-center">
@@ -366,6 +346,29 @@ function pickFile() {
           </div>
           <TreePane v-show="rightView === 'tree'" class="min-h-0 flex-1" />
           <GraphPane v-if="rightView === 'graph'" class="min-h-0 flex-1" />
+        </div>
+        <div
+          role="separator"
+          aria-orientation="vertical"
+          aria-label="拖动调整左右分栏宽度，双击恢复对半"
+          tabindex="0"
+          class="group absolute inset-y-0 z-10 w-3 -translate-x-1/2 cursor-col-resize select-none focus-visible:outline-none"
+          :style="{ left: `${leftPct}%` }"
+          @pointerdown="onSplitDown"
+          @pointermove="onSplitMove"
+          @pointerup="onSplitUp"
+          @pointercancel="onSplitUp"
+          @dblclick="leftPct = 50"
+          @keydown="onSplitKeydown"
+        >
+          <div
+            class="mx-auto h-full w-px transition-colors duration-150"
+            :class="
+              splitDragging
+                ? 'bg-accent'
+                : 'bg-transparent group-hover:bg-accent/50 group-focus-visible:bg-accent'
+            "
+          />
         </div>
       </div>
       <NTabs v-else v-model:value="activeTab" type="segment" size="small" class="mb-2">
