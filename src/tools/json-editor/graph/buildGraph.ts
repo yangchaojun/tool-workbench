@@ -14,6 +14,11 @@ export const MAX_CARD_ROWS = 100
 export const MAX_GRAPH_NODES = 1000
 /** 行内标量预览的最大字符数（与 TreeRow 的 preview 同为 80） */
 export const SCALAR_MAX_CHARS = 80
+/** 表格列宽（px）：最小 / 默认宽度，以及避免节点过宽的最大宽度（含左右 padding） */
+export const TABLE_COL_MIN = 112
+export const TABLE_COL_MAX = 360
+/** 表格单元格左右 padding（px），须与 GraphNodeCard 的 .table-data-cell 一致 */
+export const TABLE_CELL_PADDING_X = 20
 /** 默认展开阈值：数据容器层级少于该值时默认全部展开，达到即回退为仅展开根 */
 export const EXPAND_ALL_MAX_DEPTH = 5
 
@@ -46,6 +51,8 @@ export interface GraphNodeModel {
   entries: GraphEntry[]
   /** 表格节点（元素全为统一标量对象的对象数组）：列集合；null 表示非表格节点 */
   tableColumns: string[] | null
+  /** 表格节点：与 tableColumns 对齐的列宽（含 padding）；非表格节点为 null */
+  tableColumnWidths: number[] | null
   /** 表格节点：每行与 tableColumns 对齐的单元格（value 为空串表示该行缺省此列） */
   tableCells: TableCell[][]
 }
@@ -53,6 +60,7 @@ export interface GraphNodeModel {
 /** 表格节点单元格 */
 export interface TableCell {
   kind: 'string' | 'number' | 'boolean' | 'null'
+  /** 完整 JSON 值；显示预览与列宽都由它派生 */
   value: string
 }
 
@@ -115,13 +123,32 @@ export function scalarPreview(value: unknown): string {
   return ''
 }
 
+function displayWidth(value: string): number {
+  let width = 0
+  for (const char of value) {
+    const code = char.codePointAt(0)!
+    width += code <= 0xff ? 1 : 2
+  }
+  return width
+}
+
+/** 按表头与完整值的显示宽度估算列宽，结果含左右 padding。 */
+export function tableColumnWidth(column: string, values: readonly TableCell[]): number {
+  let contentWidth = displayWidth(column)
+  for (const cell of values) contentWidth = Math.max(contentWidth, displayWidth(cell.value))
+  return Math.min(
+    TABLE_COL_MAX,
+    Math.max(TABLE_COL_MIN, Math.ceil(contentWidth * 7.2 + TABLE_CELL_PADDING_X)),
+  )
+}
+
 /**
  * 对象数组 → 表格模型：元素全为对象、值全为标量时成立（列取各行键的并集，
  * 按首次出现排序，缺省列补空单元格）。否则返回 null，走常规卡片模式。
  */
 function tableModel(
   elements: readonly unknown[],
-): { columns: string[]; cells: TableCell[][] } | null {
+): { columns: string[]; cells: TableCell[][]; columnWidths: number[] } | null {
   if (elements.length === 0) return null
   const columns: string[] = []
   for (const element of elements) {
@@ -136,16 +163,20 @@ function tableModel(
     const record = element as Record<string, unknown>
     const row: TableCell[] = []
     for (const column of columns) {
-      const value = column in record ? record[column] : null
+      const present = Object.hasOwn(record, column)
+      const value = present ? record[column] : null
       if (value !== null && typeof value === 'object') return null
       row.push({
-        kind: value === null ? 'null' : (typeof value as TableCell['kind']),
-        value: column in record ? scalarPreview(value) : '',
+        kind: present ? (value === null ? 'null' : (typeof value as TableCell['kind'])) : 'null',
+        value: present ? JSON.stringify(value) : '',
       })
     }
     cells.push(row)
   }
-  return { columns, cells }
+  const columnWidths = columns.map((column, columnIndex) =>
+    tableColumnWidth(column, cells.map((row) => row[columnIndex]!)),
+  )
+  return { columns, cells, columnWidths }
 }
 
 /**
@@ -168,6 +199,7 @@ export function buildGraph(data: unknown, expandedIds: ReadonlySet<string>): Gra
       totalEntries: 0,
       entries: [],
       tableColumns: null,
+      tableColumnWidths: null,
       tableCells: [],
     })
     return { nodes, edges, truncated }
@@ -191,6 +223,7 @@ export function buildGraph(data: unknown, expandedIds: ReadonlySet<string>): Gra
       totalEntries: entriesRaw.length,
       entries: [],
       tableColumns: null,
+      tableColumnWidths: null,
       tableCells: [],
     }
 
@@ -199,6 +232,7 @@ export function buildGraph(data: unknown, expandedIds: ReadonlySet<string>): Gra
       const table = tableModel(value as unknown[])
       if (table !== null) {
         node.tableColumns = table.columns
+        node.tableColumnWidths = table.columnWidths
         node.tableCells = table.cells.slice(0, MAX_CARD_ROWS)
         nodes.push(node)
         return

@@ -2,12 +2,14 @@
 import { computed, ref } from 'vue'
 import { Handle, Position } from '@vue-flow/core'
 
+import { SCALAR_MAX_CHARS } from './buildGraph'
 import type { GraphEntry, GraphNodeModel, TableCell } from './buildGraph'
-import { ROW_H, TABLE_INDEX_COL } from './layout'
+import type { JsonPath } from '../editor/mutations'
+import { ROW_H, TABLE_COL, TABLE_INDEX_COL } from './layout'
 
 /**
  * 图谱卡片节点：对象/数组渲染为行列表（与树形视图同款语法四色）。
- * 容器行点击展开/收起子卡片；标量行点击复制 key（对齐 TreeRow 的交互约定）。
+ * 容器行点击展开/收起子卡片；标量 key 点击查看完整值，value 点击复制 key。
  * 行高严格 28px——layout.ts 的 nodeHeight 依赖它保证连线锚点对位。
  * 连线锚点：每个已展开的容器行在右缘持有行级 source Handle（按行居中），
  * 子卡片在左缘首行高度持有 target Handle——连线从对应 key 的行出发（参考 Treeease）。
@@ -15,7 +17,10 @@ import { ROW_H, TABLE_INDEX_COL } from './layout'
 
 const props = defineProps<{ model: GraphNodeModel }>()
 
-const emit = defineEmits<{ toggle: [entry: GraphEntry] }>()
+const emit = defineEmits<{
+  toggle: [entry: GraphEntry]
+  'cell-select': [path: JsonPath]
+}>()
 
 const isRoot = computed(() => props.model.path.length === 0)
 
@@ -35,7 +40,7 @@ function onContainerRowClick(entry: GraphEntry) {
   emit('toggle', entry)
 }
 
-// ── 点击复制 key（TreeRow 同款瞬时反馈）────────────────────────
+// ── value 点击复制 key（TreeRow 同款瞬时反馈）───────────────────
 const copiedKey = ref<string | null>(null)
 let copiedTimer: number | undefined
 
@@ -52,11 +57,27 @@ async function copyKey(entry: GraphEntry) {
   }, 1500)
 }
 
-function onScalarRowClick(entry: GraphEntry) {
+function onScalarKeyClick(entry: GraphEntry) {
+  emit('cell-select', [...props.model.path, entry.key])
+}
+
+function onScalarValueClick(entry: GraphEntry) {
   void copyKey(entry)
 }
 
 // ── 表格节点单元格 ─────────────────────────────────────────────
+function cellPreview(value: string): string {
+  return value.length > SCALAR_MAX_CHARS ? `${value.slice(0, SCALAR_MAX_CHARS - 1)}…` : value
+}
+
+function columnStyle(columnIndex: number) {
+  return { flexBasis: `${props.model.tableColumnWidths?.[columnIndex] ?? TABLE_COL}px` }
+}
+
+function selectCell(path: JsonPath, rowIndex: number, columnIndex: number) {
+  emit('cell-select', [...path, String(rowIndex), props.model.tableColumns?.[columnIndex] ?? ''])
+}
+
 const cellClass = (cell: TableCell) =>
   ({
     string: 'text-json-string',
@@ -99,9 +120,10 @@ const tailLabel = computed(() =>
         <div class="flex h-7 border-b border-border bg-muted/60">
           <span class="table-index-cell" :style="{ width: `${TABLE_INDEX_COL}px` }" />
           <span
-            v-for="column in model.tableColumns"
+            v-for="(column, columnIndex) in model.tableColumns"
             :key="column"
             class="table-data-cell truncate font-medium text-foreground"
+            :style="columnStyle(columnIndex)"
             :title="column"
           >
             {{ column }}
@@ -116,15 +138,20 @@ const tailLabel = computed(() =>
             class="table-index-cell text-mute"
             :style="{ width: `${TABLE_INDEX_COL}px` }"
           >{{ rowIndex }}</span>
-          <span
+          <button
             v-for="(cell, columnIndex) in row"
             :key="columnIndex"
-            class="table-data-cell truncate"
-            :class="cellClass(cell)"
-            :title="cell.value"
+            type="button"
+            class="table-data-cell min-w-0 truncate text-left"
+            :class="[cellClass(cell), cell.value === '' ? 'cursor-default text-mute' : 'cursor-pointer hover:bg-muted']"
+            :style="columnStyle(columnIndex)"
+            :title="cell.value === '' ? `${model.tableColumns?.[columnIndex] ?? ''}：缺省` : cell.value"
+            :aria-label="cell.value === '' ? `${model.tableColumns?.[columnIndex] ?? ''}：缺省` : `查看 ${model.tableColumns?.[columnIndex] ?? ''} 的完整值`"
+            :disabled="cell.value === ''"
+            @click.stop="selectCell(model.path, rowIndex, columnIndex)"
           >
-            {{ cell.value }}
-          </span>
+            {{ cell.value === '' ? '缺省' : cellPreview(cell.value) }}
+          </button>
         </div>
       </template>
       <template v-else>
@@ -159,28 +186,33 @@ const tailLabel = computed(() =>
             class="graph-card-handle"
           />
         </button>
-        <!-- 标量行：点击复制 key -->
-        <div
-          v-else
-          class="flex h-7 w-full cursor-pointer items-center justify-between gap-3 px-3 hover:bg-muted"
-          :title="entry.key"
-          @click.stop="onScalarRowClick(entry)"
-        >
-          <span class="min-w-0 truncate text-foreground">
+        <!-- 标量行：key 查看完整值，value 复制 key -->
+        <div class="flex h-7 w-full items-center justify-between gap-3 px-3 hover:bg-muted">
+          <button
+            type="button"
+            class="min-w-0 truncate text-left text-foreground hover:text-accent"
+            :title="`查看 ${entry.key} 的完整值`"
+            :aria-label="`查看 ${entry.key} 的完整值`"
+            @click.stop="onScalarKeyClick(entry)"
+          >
             {{ entry.key }}
-            <span v-if="copiedKey === entry.key" class="ml-1 text-accent">已复制 ✓</span>
-          </span>
-          <span
-            class="min-w-0 max-w-[62%] truncate"
+          </button>
+          <button
+            type="button"
+            class="min-w-0 max-w-[62%] truncate text-right"
             :class="{
               'text-json-string': entry.kind === 'string',
               'text-json-number': entry.kind === 'number',
               'text-json-boolean': entry.kind === 'boolean',
               'text-json-null': entry.kind === 'null',
             }"
+            :title="`复制 key：${entry.key}`"
+            :aria-label="`复制 key：${entry.key}`"
+            @click.stop="onScalarValueClick(entry)"
           >
             {{ entry.value }}
-          </span>
+            <span v-if="copiedKey === entry.key" class="ml-1 text-accent">已复制 ✓</span>
+          </button>
         </div>
         </template>
         <!-- 行数截断尾行 -->
@@ -202,7 +234,7 @@ const tailLabel = computed(() =>
   pointer-events: none;
 }
 
-/* 表格节点：索引列定宽（TABLE_INDEX_COL，与布局宽度一致）、数据列均分，网格线用 hairline */
+/* 索引列定宽，数据列 flex-basis 使用 tableColumnWidths，与布局宽度一致 */
 .table-index-cell {
   display: flex;
   flex-shrink: 0;
@@ -214,7 +246,7 @@ const tailLabel = computed(() =>
 .table-data-cell {
   display: flex;
   min-width: 0;
-  flex: 1 1 0;
+  flex: 0 1 auto;
   align-items: center;
   justify-content: flex-end;
   border-right: 1px solid var(--color-border);
@@ -222,5 +254,12 @@ const tailLabel = computed(() =>
 }
 .table-data-cell:last-child {
   border-right: none;
+}
+
+button.table-data-cell {
+  height: 100%;
+  font: inherit;
+  color: inherit;
+  background: transparent;
 }
 </style>

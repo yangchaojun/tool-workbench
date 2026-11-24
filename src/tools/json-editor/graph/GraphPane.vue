@@ -16,7 +16,7 @@ import { buildGraph, defaultExpandedIds, graphNodeId, MAX_GRAPH_NODES } from './
 import type { GraphEntry, GraphNodeModel } from './buildGraph'
 import { layoutGraph, nodeWidth } from './layout'
 import GraphNodeCard from './GraphNodeCard.vue'
-import type { JsonPath } from '../editor/mutations'
+import { getAtPath, isRecord, type JsonPath } from '../editor/mutations'
 
 /**
  * 图谱面板：数据源的容器结构 → 卡片节点图（Vue Flow + dagre 层次布局）。
@@ -29,11 +29,13 @@ const store = useJsonEditorStore()
 const userTouched = ref(false)
 
 const expandedIds = ref<ReadonlySet<string>>(defaultExpandedIds(store.data))
+const selectedCellPath = ref<JsonPath | null>(null)
 
 // 数据源变化且用户尚未手动干预时，按默认展开规则重新生成（打字编辑的防抖校验也算）
 watch(
   () => store.data,
   (data) => {
+    selectedCellPath.value = null
     if (!userTouched.value) expandedIds.value = defaultExpandedIds(data)
   },
 )
@@ -81,6 +83,28 @@ function onCardToggle(nodeProps: NodeProps, entry: GraphEntry) {
   toggleEntry((nodeProps.data as GraphNodeModel).path, entry)
 }
 
+const selectedCell = computed(() => {
+  const path = selectedCellPath.value
+  if (path === null) return null
+  const parent = getAtPath(store.data, path.slice(0, -1))
+  const field = path.at(-1) ?? ''
+  if (!isRecord(parent) || !Object.hasOwn(parent, field)) return null
+  const value = parent[field]
+  return {
+    field,
+    parentPath: path.slice(0, -1),
+    text: JSON.stringify(value, null, 2) ?? String(value),
+  }
+})
+
+function selectCell(path: JsonPath) {
+  selectedCellPath.value = path
+}
+
+function jsonPathLabel(path: JsonPath): string {
+  return path.map((segment) => (/^\d+$/.test(segment) ? `[${segment}]` : `[${JSON.stringify(segment)}]`)).join('')
+}
+
 const { updateNodeInternals } = useVueFlow()
 
 // 行级 Handle 随展开/收起增删，且节点内部测量可能早于 slot 内容挂载——图变化后强制重测
@@ -90,11 +114,11 @@ onMounted(() => nextTick(() => updateNodeInternals()))
 
 <template>
   <div
-    class="relative h-full min-h-0 overflow-clip rounded-panel border border-border bg-card shadow-card"
+    class="relative flex h-full min-h-0 flex-col overflow-clip rounded-panel border border-border bg-card shadow-card"
   >
     <template v-if="store.hasData && graph !== null">
       <VueFlow
-        class="json-graph"
+        class="json-graph min-h-0 flex-1"
         :nodes="flowNodes"
         :edges="flowEdges"
         :min-zoom="0.1"
@@ -104,7 +128,11 @@ onMounted(() => nextTick(() => updateNodeInternals()))
         fit-view-on-init
       >
         <template #node-json-card="nodeProps">
-          <GraphNodeCard :model="nodeProps.data as GraphNodeModel" @toggle="(e) => onCardToggle(nodeProps, e)" />
+          <GraphNodeCard
+            :model="nodeProps.data as GraphNodeModel"
+            @toggle="(e) => onCardToggle(nodeProps, e)"
+            @cell-select="selectCell"
+          />
         </template>
         <Background variant="lines" :gap="28" />
         <MiniMap pannable zoomable position="bottom-right" :width="180" :height="120" />
@@ -116,6 +144,27 @@ onMounted(() => nextTick(() => updateNodeInternals()))
       >
         图规模较大：已达 {{ MAX_GRAPH_NODES }} 节点上限，仅显示部分结构
       </div>
+      <section
+        v-if="selectedCell !== null"
+        aria-label="数据详情"
+        class="flex max-h-[45%] shrink-0 flex-col border-t border-border bg-card shadow-card"
+      >
+        <div class="flex shrink-0 items-center gap-2 border-b border-border px-3 py-1.5">
+          <span class="shrink-0 text-xs font-medium text-foreground">{{ selectedCell.field }}</span>
+          <span class="min-w-0 flex-1 truncate font-mono text-xs text-muted-foreground" :title="jsonPathLabel(selectedCell.parentPath)">
+            {{ jsonPathLabel(selectedCell.parentPath) }}
+          </span>
+          <button
+            type="button"
+            class="shrink-0 rounded px-2 py-1 text-xs text-muted-foreground transition-colors duration-150 hover:bg-muted hover:text-foreground"
+            aria-label="关闭数据详情"
+            @click="selectedCellPath = null"
+          >
+            关闭
+          </button>
+        </div>
+        <pre class="min-h-0 overflow-auto whitespace-pre-wrap break-words px-3 py-2 font-mono text-xs leading-5 text-foreground">{{ selectedCell.text }}</pre>
+      </section>
     </template>
     <div
       v-else-if="store.dataStale"
