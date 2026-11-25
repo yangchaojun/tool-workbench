@@ -1,5 +1,5 @@
 <script setup lang="ts">
-import { ref } from 'vue'
+import { computed, ref } from 'vue'
 import { storeToRefs } from 'pinia'
 import { NButton, NIcon, NInput } from 'naive-ui'
 import {
@@ -21,7 +21,8 @@ import type { DocumentHistoryEntry } from '../document/documentHistory'
  */
 
 const store = useJsonEditorStore()
-const { input, loadingUrl, docHistory } = storeToRefs(store)
+const { input, docHistory } = storeToRefs(store)
+const loadingUrl = computed(() => store.tabLoadingUrls[store.activeTabId] === true)
 
 const urlText = ref('')
 const confirmingClear = ref(false)

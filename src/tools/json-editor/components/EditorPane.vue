@@ -79,7 +79,8 @@ defineExpose({ remeasure })
     <div class="min-h-0 flex-1">
       <CodeEditor
         ref="editorRef"
-        v-model="store.input"
+        :model-value="store.input"
+        @update:model-value="store.setInput($event)"
         language="json"
         placeholder="粘贴或输入 JSON，也可直接拖入 .json 文件"
         :history="false"

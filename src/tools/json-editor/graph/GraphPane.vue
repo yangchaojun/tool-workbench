@@ -1,5 +1,5 @@
 <script setup lang="ts">
-import { computed, nextTick, onMounted, ref, watch } from 'vue'
+import { computed, nextTick, onMounted, watch } from 'vue'
 import { Position, VueFlow, useVueFlow } from '@vue-flow/core'
 import type { NodeProps } from '@vue-flow/core'
 import { Background } from '@vue-flow/background'
@@ -12,7 +12,7 @@ import '@vue-flow/controls/dist/style.css'
 import '@vue-flow/minimap/dist/style.css'
 
 import { useJsonEditorStore } from '../stores/jsonEditor'
-import { buildGraph, defaultExpandedIds, graphNodeId, MAX_GRAPH_NODES } from './buildGraph'
+import { buildGraph, graphNodeId, MAX_GRAPH_NODES } from './buildGraph'
 import type { GraphEntry, GraphNodeModel } from './buildGraph'
 import { layoutGraph, nodeWidth } from './layout'
 import GraphNodeCard from './GraphNodeCard.vue'
@@ -26,17 +26,17 @@ import { getAtPath, isRecord, type JsonPath } from '../editor/mutations'
 
 const store = useJsonEditorStore()
 
-const userTouched = ref(false)
-
-const expandedIds = ref<ReadonlySet<string>>(defaultExpandedIds(store.data))
-const selectedCellPath = ref<JsonPath | null>(null)
+const expandedIds = computed(() => store.graphExpandedIds)
+const selectedCellPath = computed({
+  get: () => store.graphSelectedCellPath,
+  set: (path) => store.selectGraphCell(path),
+})
 
 // 数据源变化且用户尚未手动干预时，按默认展开规则重新生成（打字编辑的防抖校验也算）
 watch(
   () => store.data,
-  (data) => {
-    selectedCellPath.value = null
-    if (!userTouched.value) expandedIds.value = defaultExpandedIds(data)
+  () => {
+    selectCell(null)
   },
 )
 
@@ -71,12 +71,11 @@ function toggleEntry(nodePath: JsonPath, entry: GraphEntry) {
   if (entry.containerType === null || entry.childCount === 0) return
   // 截断后禁止再展开（收起不受限），与 buildGraph 的预算语义一致
   if (graph.value?.truncated === true && entry.childId === null) return
-  userTouched.value = true
   const childId = graphNodeId([...nodePath, entry.key])
   const next = new Set(expandedIds.value)
   if (entry.childId !== null) next.delete(childId)
   else next.add(childId)
-  expandedIds.value = next
+  store.setGraphExpandedIds(next, true)
 }
 
 function onCardToggle(nodeProps: NodeProps, entry: GraphEntry) {
@@ -97,8 +96,8 @@ const selectedCell = computed(() => {
   }
 })
 
-function selectCell(path: JsonPath) {
-  selectedCellPath.value = path
+function selectCell(path: JsonPath | null) {
+  store.selectGraphCell(path)
 }
 
 function jsonPathLabel(path: JsonPath): string {

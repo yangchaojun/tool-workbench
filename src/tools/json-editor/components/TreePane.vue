@@ -10,7 +10,7 @@ import {
 import TreeView from './TreeView.vue'
 import QueryPanel from './QueryPanel.vue'
 import { useJsonEditorStore } from '../stores/jsonEditor'
-import { expandAncestors, pathKey, scrollToNode } from './treeState'
+import { pathKey } from './treeState'
 import type { JsonPath as MutPath } from '../editor/mutations'
 
 /**
@@ -72,8 +72,8 @@ function step(direction: 1 | -1) {
 }
 
 function locate(path: MutPath) {
-  expandAncestors(path)
-  requestAnimationFrame(() => scrollToNode(path))
+  store.expandAncestors(path)
+  requestAnimationFrame(() => store.scrollToNode(path))
 }
 
 const highlight = computed<MutPath | null>(() =>

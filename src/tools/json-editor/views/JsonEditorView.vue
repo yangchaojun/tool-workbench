@@ -25,6 +25,7 @@ import { formatBytes, useJsonEditorStore } from '../stores/jsonEditor'
 import { escapeJsonText, unicodeDecode, unicodeEncode, unescapeJsonText } from '../transform/codec'
 import { repairJson } from '../parser/repair'
 import EditorPane from '../components/EditorPane.vue'
+import DocumentTabs from '../components/DocumentTabs.vue'
 import TreePane from '../components/TreePane.vue'
 import GraphPane from '../graph/GraphPane.vue'
 import RepairModal from '../components/RepairModal.vue'
@@ -66,7 +67,8 @@ const paneHeightClass = 'h-[560px] min-h-[420px] xl:h-[calc(100vh-360px)]'
 const SPLIT_MIN_PCT = 20
 const SPLIT_MAX_PCT = 80
 
-const leftPct = ref(50)
+const DEFAULT_LEFT_PCT = 100 / 3
+const leftPct = ref(DEFAULT_LEFT_PCT)
 const splitArea = ref<HTMLElement | null>(null)
 const splitDragging = ref(false)
 
@@ -288,6 +290,8 @@ function pickFile() {
       </template>
     </header>
 
+    <DocumentTabs class="mb-2" />
+
     <!-- 状态栏 -->
     <div class="mb-2 flex min-h-6 shrink-0 flex-wrap items-center gap-x-3 gap-y-1 text-sm">
       <span
@@ -328,7 +332,7 @@ function pickFile() {
     </div>
 
     <!-- 主区 -->
-    <DiffView v-if="store.mode === 'diff'" />
+    <DiffView v-if="store.mode === 'diff'" :key="store.activeTabId" />
     <template v-else>
       <!-- 两面板贴合无缝；分隔热区为覆盖接缝的透明窄条，悬停/拖动时显示强调线 -->
       <div
@@ -338,16 +342,16 @@ function pickFile() {
         :class="splitDragging ? 'cursor-col-resize select-none' : ''"
       >
         <div class="min-w-0" :style="{ width: `${leftPct}%` }">
-          <EditorPane ref="editorPaneRef" />
+          <EditorPane v-if="store.mode === 'edit'" :key="store.activeTabId" ref="editorPaneRef" />
         </div>
         <div class="flex h-full min-h-0 min-w-0 flex-1 flex-col">
-          <TreePane v-show="rightView === 'tree'" class="min-h-0 flex-1" />
-          <GraphPane v-if="rightView === 'graph'" class="min-h-0 flex-1" />
+          <TreePane v-if="store.mode === 'edit'" v-show="rightView === 'tree'" :key="store.activeTabId" class="min-h-0 flex-1" />
+          <GraphPane v-if="store.mode === 'edit' && rightView === 'graph'" :key="store.activeTabId" class="min-h-0 flex-1" />
         </div>
         <div
           role="separator"
           aria-orientation="vertical"
-          aria-label="拖动调整左右分栏宽度，双击恢复对半"
+          aria-label="拖动调整左右分栏宽度，双击恢复默认比例"
           tabindex="0"
           class="group absolute inset-y-0 z-10 w-3 -translate-x-1/2 cursor-col-resize select-none focus-visible:outline-none"
           :style="{ left: `${leftPct}%` }"
@@ -355,7 +359,7 @@ function pickFile() {
           @pointermove="onSplitMove"
           @pointerup="onSplitUp"
           @pointercancel="onSplitUp"
-          @dblclick="leftPct = 50"
+          @dblclick="leftPct = DEFAULT_LEFT_PCT"
           @keydown="onSplitKeydown"
         >
           <div
@@ -371,17 +375,17 @@ function pickFile() {
       <NTabs v-else v-model:value="activeTab" type="segment" size="small" class="mb-2">
         <NTabPane name="text" tab="文本" display-directive="show">
           <div :class="paneHeightClass">
-            <EditorPane ref="editorPaneRef" />
+            <EditorPane v-if="store.mode === 'edit'" :key="store.activeTabId" ref="editorPaneRef" />
           </div>
         </NTabPane>
         <NTabPane name="tree" tab="树形" display-directive="show">
           <div :class="paneHeightClass">
-            <TreePane />
+            <TreePane :key="store.activeTabId" />
           </div>
         </NTabPane>
         <NTabPane name="graph" tab="图谱" display-directive="if">
           <div :class="paneHeightClass">
-            <GraphPane />
+            <GraphPane :key="store.activeTabId" />
           </div>
         </NTabPane>
       </NTabs>

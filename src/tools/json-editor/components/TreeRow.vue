@@ -16,14 +16,7 @@ import {
 import { useJsonEditorStore } from '../stores/jsonEditor'
 import { jsonValueTypeLabels, type JsonValueType } from './treeTypes'
 import {
-  dragState,
-  expandAncestors,
   pathKey,
-  pendingEdit,
-  scrollToNode,
-  setExpanded,
-  toggleExpanded,
-  treeEditSession,
   type DropMode,
   type TreeEditSession,
 } from './treeState'
@@ -55,12 +48,12 @@ const highlighted = computed(
 
 function toggle() {
   if (!canExpand.value) return
-  toggleExpanded(props.row.path, props.row.depth)
+  store.toggleExpanded(props.row.path, props.row.depth)
 }
 
 // ── 就地编辑（会话存模块态，滚动重挂载不丢失）────────────────────
 
-const session = computed(() => treeEditSession.session)
+const session = computed(() => store.treeEditSession)
 const editing = computed(
   () => session.value !== null && pathKey(session.value.path) === myKey.value,
 )
@@ -77,22 +70,22 @@ const typeOptions = [
 function startEdit() {
   if (!store.hasData || store.treeEditReadonly) return
   const v = props.row.value
-  treeEditSession.session = {
+  store.setTreeEditSession({
     path: [...props.row.path],
     name: props.row.name,
     type: props.row.kind as JsonValueType,
     text: typeof v === 'string' ? v : typeof v === 'number' ? String(v) : '',
     bool: v === true,
     error: null,
-  }
+  })
 }
 
 function cancelEdit() {
-  treeEditSession.session = null
+  store.setTreeEditSession(null)
 }
 
 function setEditBool(v: string) {
-  const s = treeEditSession.session
+  const s = store.treeEditSession
   if (s !== null) s.bool = v === 'true'
 }
 
@@ -126,7 +119,7 @@ function valueChanged(s: TreeEditSession): boolean {
 }
 
 function confirmEdit() {
-  const s = treeEditSession.session
+  const s = store.treeEditSession
   if (s === null) return
   s.error = null
   const value = buildValue(s)
@@ -143,7 +136,7 @@ function confirmEdit() {
   const newKey = keyChanged ? s.name : null
   const changeValue = valueChanged(s)
   if (!keyChanged && !changeValue) {
-    treeEditSession.session = null
+    store.setTreeEditSession(null)
     return
   }
   const ok = store.editEntry(props.row.path, newKey, value, changeValue)
@@ -151,15 +144,15 @@ function confirmEdit() {
     s.error = '键名冲突或编辑失败'
     return
   }
-  treeEditSession.session = null
+  store.setTreeEditSession(null)
 }
 
 // 新增子项后自动进入编辑态
 watch(
-  () => pendingEdit.path,
+  () => store.pendingEdit.pendingEdit,
   (p) => {
     if (p !== null && pathKey(p) === myKey.value) {
-      pendingEdit.path = null
+      store.pendingEdit.pendingEdit = null
       startEdit()
     }
   },
@@ -171,17 +164,17 @@ watch(
 
 function addChild() {
   if (!props.row.isContainer || store.treeEditReadonly) return
-  setExpanded(props.row.path, true)
+  store.setExpanded(props.row.path, true)
   if (isArray.value) {
     const index = (props.row.value as unknown[]).length
     if (store.addArrayChild(props.row.path, null)) {
-      pendingEdit.path = [...props.row.path, String(index)]
+      store.pendingEdit.pendingEdit = [...props.row.path, String(index)]
     }
   } else {
     const key = store.nextKeyFor(props.row.path)
     if (key === null) return
     if (store.addObjectChild(props.row.path, key, null)) {
-      pendingEdit.path = [...props.row.path, key]
+      store.pendingEdit.pendingEdit = [...props.row.path, key]
     }
   }
 }
@@ -207,14 +200,16 @@ function onDragStart(event: DragEvent) {
     event.preventDefault()
     return
   }
-  dragState.from = props.row.path
+  const state = store.dragState
+  state.dragFrom = props.row.path
   event.dataTransfer?.setData('text/plain', myKey.value)
   if (event.dataTransfer) event.dataTransfer.effectAllowed = 'move'
 }
 
 function onDragEnd() {
-  dragState.from = null
-  dragState.target = null
+  const state = store.dragState
+  state.dragFrom = null
+  state.dragTarget = null
 }
 
 /** 计算本行的落点模式 */
@@ -230,22 +225,24 @@ function computeDropMode(event: DragEvent): DropMode {
 }
 
 function onDragOver(event: DragEvent) {
-  if (dragState.from === null) return
+  const state = store.dragState
+  if (state.dragFrom === null) return
   event.preventDefault()
   event.stopPropagation()
   if (event.dataTransfer) event.dataTransfer.dropEffect = 'move'
-  dragState.target = { path: props.row.path, mode: computeDropMode(event) }
+  state.dragTarget = { path: props.row.path, mode: computeDropMode(event) }
 }
 
 function onDrop(event: DragEvent) {
   event.preventDefault()
   event.stopPropagation()
-  const from = dragState.from
-  const mode = dragState.target !== null && pathKey(dragState.target.path) === myKey.value
-    ? dragState.target.mode
+  const state = store.dragState
+  const from = state.dragFrom
+  const mode = state.dragTarget !== null && pathKey(state.dragTarget.path) === myKey.value
+    ? state.dragTarget.mode
     : computeDropMode(event)
-  dragState.from = null
-  dragState.target = null
+  state.dragFrom = null
+  state.dragTarget = null
   if (from === null) return
   dropNode(from, mode)
 }
@@ -286,8 +283,8 @@ function dropNode(from: JsonPath, mode: DropMode) {
   const newPath = store.moveNodeAction({ from, toParent, index })
   if (newPath !== null) {
     // 跟随节点落位：展开目标祖先并滚动
-    expandAncestors(newPath)
-    requestAnimationFrame(() => scrollToNode(newPath))
+    store.expandAncestors(newPath)
+    requestAnimationFrame(() => store.scrollToNode(newPath))
   }
 }
 
@@ -302,8 +299,9 @@ function objectKeyPosition(parentPath: JsonPath, key: string): number {
 }
 
 const dropHint = computed<DropMode | null>(() => {
-  if (dragState.target === null) return null
-  return pathKey(dragState.target.path) === myKey.value ? dragState.target.mode : null
+  const state = store.dragState
+  if (state.dragTarget === null) return null
+  return pathKey(state.dragTarget.path) === myKey.value ? state.dragTarget.mode : null
 })
 
 // ── 点击字段名 / 值复制 ─────────────────────────────────────────
