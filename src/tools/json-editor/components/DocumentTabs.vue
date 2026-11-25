@@ -39,15 +39,15 @@ watch(
 </script>
 
 <template>
-  <div class="flex min-h-9 shrink-0 items-stretch gap-1 overflow-x-auto border-b border-border bg-muted/30 px-2">
+  <div class="flex min-h-10 shrink-0 items-center gap-1 overflow-x-auto bg-muted px-2">
     <div
       v-for="tab in store.tabs"
       :key="tab.id"
-      class="group relative flex min-w-28 max-w-56 shrink-0 items-center gap-1 border-b-2 px-2 text-sm transition-colors"
+      class="group flex h-7 min-w-28 max-w-56 shrink-0 items-center gap-1 rounded border border-transparent px-1.5 transition-colors"
       :class="
         tab.id === store.activeTabId
-          ? 'border-accent bg-card text-foreground'
-          : 'border-transparent text-muted-foreground hover:bg-muted hover:text-foreground'
+          ? 'border-border bg-card text-foreground shadow-card'
+          : 'text-muted-foreground hover:border-border/70 hover:bg-card/70 hover:text-foreground'
       "
       @dblclick="startRename(tab.id, tab.name)"
     >
@@ -65,7 +65,7 @@ watch(
       <template v-else>
         <button
           type="button"
-          class="min-w-0 flex-1 truncate py-1.5 text-left"
+          class="min-w-0 flex-1 truncate py-0.5 text-left"
           :title="`${tab.name}（双击重命名）`"
           @click="store.switchTab(tab.id)"
         >
@@ -95,14 +95,12 @@ watch(
     <NButton
       size="tiny"
       quaternary
-      class="my-1 shrink-0"
+      class="size-7 shrink-0"
       title="新建标签"
       aria-label="新建标签"
       @click="store.addTab()"
     >
-      <template #icon>
-        <NIcon :size="15"><AddOutline /></NIcon>
-      </template>
+      <NIcon :size="15"><AddOutline /></NIcon>
     </NButton>
   </div>
 </template>
