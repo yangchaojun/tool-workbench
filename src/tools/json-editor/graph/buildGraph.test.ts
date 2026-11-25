@@ -7,6 +7,10 @@ import {
   scalarPreview,
   MAX_CARD_ROWS,
   MAX_GRAPH_NODES,
+  tableColumnWidth,
+  TABLE_CELL_PADDING_X,
+  TABLE_COL_MAX,
+  TABLE_COL_MIN,
 } from './buildGraph'
 
 const ROOT = graphNodeId([])
@@ -69,6 +73,47 @@ describe('defaultExpandedIds', () => {
       Array.from({ length: MAX_GRAPH_NODES + 100 }, (_, i) => [`${i}`, { v: i }]),
     )
     expect(defaultExpandedIds(doc).size).toBe(MAX_GRAPH_NODES)
+  })
+})
+
+describe('tableColumnWidth', () => {
+  const widths = (header: string, ...values: string[]) =>
+    tableColumnWidth(header, values.map((value) => ({ kind: 'string' as const, value })))
+
+  it('短表头和值使用最小宽度', () => {
+    expect(widths('id', '1', '22')).toBe(TABLE_COL_MIN)
+  })
+
+  it('按最长的完整值增加宽度，并在估算中加入左右 padding', () => {
+    const value = 'x'.repeat(15)
+    expect(widths('id', value)).toBe(Math.ceil(15 * 7.2 + TABLE_CELL_PADDING_X))
+    expect(widths('a-long-column-header', '1')).toBeGreaterThan(TABLE_COL_MIN)
+  })
+
+  it('长值限制为图表节点的最大列宽', () => {
+    expect(widths('description', 'x'.repeat(313))).toBe(TABLE_COL_MAX)
+  })
+
+  it('大量单元格不会超过函数参数上限', () => {
+    const values = Array.from({ length: 70_000 }, () => ({ kind: 'string' as const, value: 'x' }))
+    expect(tableColumnWidth('description', values)).toBe(TABLE_COL_MIN)
+  })
+})
+
+describe('表格列存在性', () => {
+  it('原型属性不会成为表格列，缺省列保持禁用状态', () => {
+    const rows = JSON.parse('[{"toString":"present"},{}]') as Record<string, unknown>[]
+    const graph = buildGraph({ rows }, new Set([graphNodeId(['rows'])]))
+    const node = graph.nodes[1]!
+    expect(node.tableColumns).toEqual(['toString'])
+    expect(node.tableCells[1]?.[0]).toEqual({ kind: 'null', value: '' })
+  })
+
+  it('普通对象列不会读取原型函数', () => {
+    const graph = buildGraph({ rows: [{ id: 1 }, { id: 2 }] }, new Set([graphNodeId(['rows'])]))
+    const node = graph.nodes[1]!
+    expect(node.tableColumns).toEqual(['id'])
+    expect(node.tableCells.flat().map((cell) => cell.value)).toEqual(['1', '2'])
   })
 })
 
@@ -138,6 +183,7 @@ describe('buildGraph', () => {
     const rows = graph.nodes.find((n) => n.id === graphNodeId(['rows']))
     expect(rows).toMatchObject({
       tableColumns: ['h1', 'h2', 'h3'],
+      tableColumnWidths: [TABLE_COL_MIN, TABLE_COL_MIN, TABLE_COL_MIN],
       totalEntries: 2,
     })
     // 单元格对齐列：缺省列补空串
@@ -150,6 +196,28 @@ describe('buildGraph', () => {
     // 元素不再生成子卡片
     expect(graph.nodes).toHaveLength(2)
     expect(graph.edges).toHaveLength(1)
+  })
+
+  it('表格单元格保留完整字符串，列宽由完整值计算', () => {
+    const value = 'LONG-' + '0123456789'.repeat(30) + '-END'
+    const graph = buildGraph({ rows: [{ description: value }] }, new Set([graphNodeId(['rows'])]))
+    const node = graph.nodes[1]!
+    expect(node.tableCells[0]?.[0]).toEqual({ kind: 'string', value: JSON.stringify(value) })
+    expect(node.tableColumnWidths).toEqual([TABLE_COL_MAX])
+  })
+
+  it('列宽使用截断行之前的全部表格值', () => {
+    const value = 'x'.repeat(30)
+    const doc = {
+      rows: [
+        { description: 'short' },
+        ...Array.from({ length: MAX_CARD_ROWS }, (_, i) => ({ description: i === 0 ? value : 'short' })),
+      ],
+    }
+    const graph = buildGraph(doc, new Set([graphNodeId(['rows'])]))
+    const rows = graph.nodes[1]!
+    expect(rows.tableCells).toHaveLength(MAX_CARD_ROWS)
+    expect(rows.tableColumnWidths).toEqual([Math.ceil((value.length + 2) * 7.2 + TABLE_CELL_PADDING_X)])
   })
 
   it('元素含标量或容器值时回退常规卡片模式', () => {

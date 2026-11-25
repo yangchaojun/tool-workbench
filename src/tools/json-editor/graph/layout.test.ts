@@ -1,6 +1,6 @@
 import { describe, expect, it } from 'vitest'
 
-import { buildGraph, graphNodeId } from './buildGraph'
+import { buildGraph, graphNodeId, TABLE_COL_MAX } from './buildGraph'
 import {
   GRAPH_PADDING,
   layoutGraph,
@@ -77,5 +77,15 @@ describe('layoutGraph', () => {
     expect(positions.get(graphNodeId(['rows']))!.x).toBe(positions.get(graphNodeId(['plain']))!.x)
     const inner = positions.get(graphNodeId(['plain', 'inner']))!
     expect(inner.x).toBe(GRAPH_PADDING + NODE_WIDTH + RANK_SEP + nodeWidth(rowsNode) + RANK_SEP)
+  })
+
+  it('表格节点宽度使用各列内容宽度，长值列达到上限', () => {
+    const graph = buildGraph(
+      { rows: [{ id: 1, description: 'x'.repeat(313) }] },
+      new Set([graphNodeId(['rows'])]),
+    )
+    const rows = graph.nodes[1]!
+    expect(rows.tableColumnWidths).toEqual([TABLE_COL, TABLE_COL_MAX])
+    expect(nodeWidth(rows)).toBe(TABLE_INDEX_COL + TABLE_COL + TABLE_COL_MAX)
   })
 })

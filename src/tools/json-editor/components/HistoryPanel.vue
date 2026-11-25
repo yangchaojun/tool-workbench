@@ -1,5 +1,6 @@
 <script setup lang="ts">
 import { ref } from 'vue'
+import { storeToRefs } from 'pinia'
 import { NButton, NIcon, NInput } from 'naive-ui'
 import {
   ClipboardOutline,
@@ -20,6 +21,7 @@ import type { DocumentHistoryEntry } from '../document/documentHistory'
  */
 
 const store = useJsonEditorStore()
+const { input, loadingUrl, docHistory } = storeToRefs(store)
 
 const urlText = ref('')
 const confirmingClear = ref(false)
@@ -46,6 +48,22 @@ function timeLabel(ts: number): string {
   return `${pad(d.getMonth() + 1)}-${pad(d.getDate())} ${pad(d.getHours())}:${pad(d.getMinutes())}`
 }
 
+function restoreEntry(entry: DocumentHistoryEntry) {
+  if (canRestore(entry)) store.restoreFromDocHistory(entry.id)
+}
+
+function refetchEntry(entry: DocumentHistoryEntry) {
+  store.refetchDocHistoryEntry(entry.id)
+}
+
+function removeEntry(entry: DocumentHistoryEntry) {
+  store.removeDocHistoryEntry(entry.id)
+}
+
+function saveCurrent() {
+  store.saveCurrentToDocHistory()
+}
+
 function onClear() {
   if (!confirmingClear.value) {
     confirmingClear.value = true
@@ -68,23 +86,23 @@ function onClear() {
         clearable
         @keydown.enter="loadFromUrl"
       />
-      <NButton size="small" type="primary" secondary :loading="store.loadingUrl" @click="loadFromUrl">
+      <NButton size="small" type="primary" secondary :loading="loadingUrl" @click="loadFromUrl">
         加载
       </NButton>
     </div>
 
-    <div v-if="store.docHistory.length === 0" class="px-1 py-3 text-center text-xs text-muted-foreground">
+    <div v-if="docHistory.length === 0" class="px-1 py-3 text-center text-xs text-muted-foreground">
       暂无文档历史——上传或从 URL 载入后自动记录
     </div>
 
     <div v-else class="-mx-1 max-h-72 overflow-y-auto px-1">
       <div
-        v-for="entry in store.docHistory"
+        v-for="entry in docHistory"
         :key="entry.id"
         class="group flex items-center gap-2 rounded px-1.5 py-1.5"
         :class="canRestore(entry) ? 'cursor-pointer hover:bg-muted' : 'cursor-default opacity-60'"
         :title="canRestore(entry) ? '载入此文档' : '内容超出 256KB 未缓存，无法直接恢复'"
-        @click="canRestore(entry) && store.restoreFromDocHistory(entry.id)"
+        @click="restoreEntry(entry)"
       >
         <NIcon :size="14" class="shrink-0 text-muted-foreground"><component :is="kindIcon(entry)" /></NIcon>
         <span class="min-w-0 flex-1 truncate font-mono text-xs" :title="displayName(entry)">
@@ -100,7 +118,7 @@ function onClear() {
           class="grid size-6 shrink-0 place-items-center rounded text-muted-foreground opacity-0 transition-opacity hover:text-accent group-hover:opacity-100 group-focus-within:opacity-100"
           aria-label="重新拉取"
           title="重新拉取"
-          @click.stop="store.refetchDocHistoryEntry(entry.id)"
+          @click.stop="refetchEntry(entry)"
         >
           <NIcon :size="13"><CloudDownloadOutline /></NIcon>
         </button>
@@ -110,7 +128,7 @@ function onClear() {
           class="grid size-6 shrink-0 place-items-center rounded text-muted-foreground opacity-0 transition-opacity hover:text-destructive group-hover:opacity-100 group-focus-within:opacity-100"
           aria-label="删除此条"
           title="删除此条"
-          @click.stop="store.removeDocHistoryEntry(entry.id)"
+          @click.stop="removeEntry(entry)"
         >
           <NIcon :size="13"><TrashOutline /></NIcon>
         </button>
@@ -121,8 +139,8 @@ function onClear() {
       <NButton
         size="tiny"
         quaternary
-        :disabled="store.input.trim() === ''"
-        @click="store.saveCurrentToDocHistory()"
+        :disabled="input.trim() === ''"
+        @click="saveCurrent()"
       >
         <template #icon>
           <NIcon :size="14"><SaveOutline /></NIcon>
@@ -133,7 +151,7 @@ function onClear() {
         size="tiny"
         quaternary
         type="error"
-        :disabled="store.docHistory.length === 0"
+        :disabled="docHistory.length === 0"
         @click="onClear"
       >
         <template #icon>

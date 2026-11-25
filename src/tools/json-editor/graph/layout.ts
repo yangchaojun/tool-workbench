@@ -5,14 +5,14 @@
  * 卡片宽度固定、高度按行数估算（卡片渲染严格行高制，估算值 = 实际值）。
  */
 
-import { graphNodeId } from './buildGraph'
+import { graphNodeId, TABLE_COL_MIN } from './buildGraph'
 import type { GraphNodeModel } from './buildGraph'
 
-/** 卡片宽度（px）：常规节点的唯一宽度源；表格节点按列数另计（见 nodeWidth） */
+/** 卡片宽度（px）：常规节点的唯一宽度源；表格节点按列宽另计（见 nodeWidth） */
 export const NODE_WIDTH = 280
-/** 表格节点：索引列 / 数据列宽（px） */
+/** 表格节点：索引列 / 数据列最小宽度（px） */
 export const TABLE_INDEX_COL = 56
-export const TABLE_COL = 112
+export const TABLE_COL = TABLE_COL_MIN
 /** 卡片行高（px）：GraphNodeCard 的行渲染必须与此一致 */
 export const ROW_H = 28
 /** 层间距 / 同层子树间距（px） */
@@ -34,10 +34,10 @@ export function nodeHeight(node: GraphNodeModel): number {
   return Math.max(rows, 1) * ROW_H
 }
 
-/** 节点宽度：常规卡片固定；表格节点 = 索引列 + 数据列 */
+/** 节点宽度：常规卡片固定；表格节点 = 索引列 + 内容列宽 */
 export function nodeWidth(node: GraphNodeModel): number {
-  if (node.tableColumns === null) return NODE_WIDTH
-  return TABLE_INDEX_COL + node.tableColumns.length * TABLE_COL
+  if (node.tableColumns === null || node.tableColumnWidths === null) return NODE_WIDTH
+  return TABLE_INDEX_COL + node.tableColumnWidths.reduce((sum, width) => sum + width, 0)
 }
 
 export interface GraphPosition {
