@@ -306,7 +306,7 @@ export const useJsonEditorStore = defineStore('json-editor', () => {
       input,
     })
     detachActiveTab()
-    tabs.value.push(tab)
+    tabs.value = [...tabs.value, tab]
     activeTabId.value = id
     attachActiveTab()
     if (input !== '') scheduleValidation()
@@ -324,7 +324,7 @@ export const useJsonEditorStore = defineStore('json-editor', () => {
 
     const wasActive = id === activeTabId.value
     if (wasActive) detachActiveTab()
-    tabs.value.splice(index, 1)
+    tabs.value = tabs.value.filter((tab) => tab.id !== id)
     if (wasActive) {
       const next = tabs.value[Math.min(index, tabs.value.length - 1)]
       activeTabId.value = next.id
@@ -1020,7 +1020,7 @@ export const useJsonEditorStore = defineStore('json-editor', () => {
   // 首次进入即呈现已恢复输入的校验结果
   for (const persistedTab of workspace.tabs) {
     const tab = makeTab(persistedTab)
-    tabs.value.push(tab)
+    tabs.value = [...tabs.value, tab]
     if (tab.input !== '' && byteEncoder.encode(tab.input).length <= SOFT_CAP_BYTES) {
       validateTab(tab)
       tab.lastGraphData = tab.data

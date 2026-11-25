@@ -1,6 +1,6 @@
 import { afterEach, beforeEach, describe, expect, it, vi } from 'vitest'
 import { createPinia, setActivePinia } from 'pinia'
-import { nextTick } from 'vue'
+import { nextTick, watch } from 'vue'
 
 import { TAB_PERSIST_BUDGET_BYTES } from '../schemas'
 import { useJsonEditorStore } from './jsonEditor'
@@ -239,6 +239,27 @@ describe('多标签工作区', () => {
 
     expect(store.loadError).toBe(null)
     expect(store.tabs.find((tab) => tab.id === firstId)?.loadError).toBe('无法读取文件 broken.json')
+  })
+
+  it('删除非当前标签时通知界面更新', async () => {
+    const store = useJsonEditorStore()
+    const firstId = store.activeTabId
+    const secondId = store.addTab('{}')
+    await nextTick()
+    let renderedNames: string[] = []
+    watch(
+      () => store.tabs.map((tab) => tab.name),
+      (names) => {
+        renderedNames = names
+      },
+      { immediate: true },
+    )
+
+    expect(store.closeTab(firstId)).toBe(true)
+    await nextTick()
+
+    expect(store.activeTabId).toBe(secondId)
+    expect(renderedNames).toEqual(['Untitled 2'])
   })
 
   it('重命名拒绝空名称并持久化', () => {
