@@ -67,7 +67,8 @@ const paneHeightClass = 'h-[560px] min-h-[420px] xl:h-[calc(100vh-360px)]'
 const SPLIT_MIN_PCT = 20
 const SPLIT_MAX_PCT = 80
 
-const leftPct = ref(50)
+const DEFAULT_LEFT_PCT = 100 / 3
+const leftPct = ref(DEFAULT_LEFT_PCT)
 const splitArea = ref<HTMLElement | null>(null)
 const splitDragging = ref(false)
 
@@ -350,7 +351,7 @@ function pickFile() {
         <div
           role="separator"
           aria-orientation="vertical"
-          aria-label="拖动调整左右分栏宽度，双击恢复对半"
+          aria-label="拖动调整左右分栏宽度，双击恢复默认比例"
           tabindex="0"
           class="group absolute inset-y-0 z-10 w-3 -translate-x-1/2 cursor-col-resize select-none focus-visible:outline-none"
           :style="{ left: `${leftPct}%` }"
@@ -358,7 +359,7 @@ function pickFile() {
           @pointermove="onSplitMove"
           @pointerup="onSplitUp"
           @pointercancel="onSplitUp"
-          @dblclick="leftPct = 50"
+          @dblclick="leftPct = DEFAULT_LEFT_PCT"
           @keydown="onSplitKeydown"
         >
           <div
