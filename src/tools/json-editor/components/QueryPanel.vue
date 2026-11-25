@@ -5,7 +5,6 @@ import { PlayOutline, CopyOutline } from '@vicons/ionicons5'
 
 import { runQuery, type QueryLang } from '../query/query'
 import { useJsonEditorStore } from '../stores/jsonEditor'
-import { expandAncestors, scrollToNode } from './treeState'
 import type { JsonPath } from '../editor/mutations'
 import { jsonValueType, jsonValueTypeLabels } from './treeTypes'
 
@@ -48,8 +47,8 @@ async function run() {
 function locate(result: unknown) {
   const path = findPath(store.data, result)
   if (path === null) return
-  expandAncestors(path)
-  requestAnimationFrame(() => scrollToNode(path))
+  store.expandAncestors(path)
+  requestAnimationFrame(() => store.scrollToNode(path))
 }
 
 /** 在数据源里查找首个与结果深度相等的路径（=== 引用或原始值相等） */

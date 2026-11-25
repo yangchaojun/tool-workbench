@@ -5,14 +5,7 @@ import type { VirtualListInst } from 'naive-ui'
 
 import TreeRow from './TreeRow.vue'
 import { flattenTree } from './treeRows'
-import {
-  expandAll,
-  collapseAll,
-  isExpanded,
-  pathKey,
-  setScrollToHandler,
-  expandVersion,
-} from './treeState'
+import { pathKey } from './treeState'
 import { useJsonEditorStore } from '../stores/jsonEditor'
 import { jsonValueType, jsonValueTypeLabels } from './treeTypes'
 import type { JsonPath } from '../editor/mutations'
@@ -38,8 +31,8 @@ const rootSummary = computed(() => {
  * 读 expandVersion：expandAll 写入的深层路径不在既有依赖内，需版本号兜底重算。
  */
 const rows = computed(() => {
-  void expandVersion.value
-  return flattenTree(store.data, isExpanded)
+  void store.treeState.expandVersion
+  return flattenTree(store.data, (path, depth) => store.isExpanded(path, depth))
 })
 
 const virtualListRef = ref<VirtualListInst | null>(null)
@@ -49,8 +42,8 @@ function handleScrollTo(path: JsonPath) {
   const index = rows.value.findIndex((r) => r.type === 'node' && r.key === pathKey(path))
   if (index >= 0) virtualListRef.value?.scrollTo({ index })
 }
-onMounted(() => setScrollToHandler(handleScrollTo))
-onBeforeUnmount(() => setScrollToHandler(null))
+onMounted(() => store.setScrollToHandler(handleScrollTo))
+onBeforeUnmount(() => store.setScrollToHandler(null))
 </script>
 
 <template>
@@ -61,14 +54,14 @@ onBeforeUnmount(() => setScrollToHandler(null))
         <button
           type="button"
           class="rounded px-1.5 py-0.5 text-xs text-muted-foreground transition-colors duration-150 hover:text-foreground"
-          @click="expandAll(store.data)"
+          @click="store.expandAll()"
         >
           全部展开
         </button>
         <button
           type="button"
           class="rounded px-1.5 py-0.5 text-xs text-muted-foreground transition-colors duration-150 hover:text-foreground"
-          @click="collapseAll()"
+          @click="store.collapseAll()"
         >
           全部折叠
         </button>
