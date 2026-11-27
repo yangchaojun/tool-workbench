@@ -87,9 +87,9 @@ function onCardToggle(nodeProps: NodeProps, entry: GraphEntry) {
 const selectedCell = computed(() => {
   const path = selectedCellPath.value
   if (path === null) return null
-  const parent = getAtPath(store.data, path.slice(0, -1))
-  const field = path.at(-1) ?? ''
   // 父级可为对象或数组（数组节点的行 key 是下标），isRecord 会把数组排除掉
+  const parent = getAtPath(store.data, path.slice(0, -1)) as Record<string, unknown> | null
+  const field = path.at(-1) ?? ''
   if (parent === null || typeof parent !== 'object' || !Object.hasOwn(parent, field)) return null
   const value = parent[field]
   const text = JSON.stringify(value, null, 2) ?? String(value)
