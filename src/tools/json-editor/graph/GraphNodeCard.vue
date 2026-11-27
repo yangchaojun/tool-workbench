@@ -1,5 +1,5 @@
 <script setup lang="ts">
-import { computed, ref } from 'vue'
+import { computed } from 'vue'
 import { Handle, Position } from '@vue-flow/core'
 
 import { SCALAR_MAX_CHARS } from './buildGraph'
@@ -9,7 +9,7 @@ import { ROW_H, TABLE_COL, TABLE_INDEX_COL } from './layout'
 
 /**
  * 图谱卡片节点：对象/数组渲染为行列表（与树形视图同款语法四色）。
- * 容器行点击展开/收起子卡片；标量 key 点击查看完整值，value 点击复制 key。
+ * 容器行点击展开/收起子卡片并在底部信息栏查看值；标量行整行点击在信息栏查看完整值（复制也在信息栏）。
  * 行高严格 28px——layout.ts 的 nodeHeight 依赖它保证连线锚点对位。
  * 连线锚点：每个已展开的容器行在右缘持有行级 source Handle（按行居中），
  * 子卡片在左缘首行高度持有 target Handle——连线从对应 key 的行出发（参考 Treeease）。
@@ -36,33 +36,13 @@ function badge(entry: GraphEntry): string {
 }
 
 function onContainerRowClick(entry: GraphEntry) {
+  emit('cell-select', [...props.model.path, entry.key])
   if (entry.childCount === 0) return
   emit('toggle', entry)
 }
 
-// ── value 点击复制 key（TreeRow 同款瞬时反馈）───────────────────
-const copiedKey = ref<string | null>(null)
-let copiedTimer: number | undefined
-
-async function copyKey(entry: GraphEntry) {
-  try {
-    await navigator.clipboard.writeText(entry.key)
-    copiedKey.value = entry.key
-  } catch {
-    copiedKey.value = null
-  }
-  window.clearTimeout(copiedTimer)
-  copiedTimer = window.setTimeout(() => {
-    copiedKey.value = null
-  }, 1500)
-}
-
 function onScalarKeyClick(entry: GraphEntry) {
   emit('cell-select', [...props.model.path, entry.key])
-}
-
-function onScalarValueClick(entry: GraphEntry) {
-  void copyKey(entry)
 }
 
 // ── 表格节点单元格 ─────────────────────────────────────────────
@@ -170,7 +150,6 @@ const tailLabel = computed(() =>
         >
           <span class="min-w-0 truncate group-hover:text-foreground" :class="entry.childId !== null ? 'text-accent' : 'text-foreground'">
             {{ entry.key }}
-            <span v-if="copiedKey === entry.key" class="ml-1 text-accent">已复制 ✓</span>
           </span>
           <span
             class="shrink-0 font-medium"
@@ -186,19 +165,16 @@ const tailLabel = computed(() =>
             class="graph-card-handle"
           />
         </button>
-        <!-- 标量行：key 查看完整值，value 复制 key -->
-        <div class="flex h-7 w-full items-center justify-between gap-3 px-3 hover:bg-muted">
-          <button
-            type="button"
-            class="min-w-0 truncate text-left text-foreground hover:text-accent"
-            :title="`查看 ${entry.key} 的完整值`"
-            :aria-label="`查看 ${entry.key} 的完整值`"
-            @click.stop="onScalarKeyClick(entry)"
-          >
-            {{ entry.key }}
-          </button>
-          <button
-            type="button"
+        <!-- 标量行：整行点击在底部信息栏查看完整值（复制在信息栏） -->
+        <button
+          type="button"
+          class="flex h-7 w-full cursor-pointer items-center justify-between gap-3 px-3 text-left transition-colors duration-150 hover:bg-muted"
+          :title="`查看 ${entry.key} 的完整值`"
+          :aria-label="`查看 ${entry.key} 的完整值`"
+          @click.stop="onScalarKeyClick(entry)"
+        >
+          <span class="min-w-0 truncate text-foreground">{{ entry.key }}</span>
+          <span
             class="min-w-0 max-w-[62%] truncate text-right"
             :class="{
               'text-json-string': entry.kind === 'string',
@@ -206,14 +182,10 @@ const tailLabel = computed(() =>
               'text-json-boolean': entry.kind === 'boolean',
               'text-json-null': entry.kind === 'null',
             }"
-            :title="`复制 key：${entry.key}`"
-            :aria-label="`复制 key：${entry.key}`"
-            @click.stop="onScalarValueClick(entry)"
           >
             {{ entry.value }}
-            <span v-if="copiedKey === entry.key" class="ml-1 text-accent">已复制 ✓</span>
-          </button>
-        </div>
+          </span>
+        </button>
         </template>
         <!-- 行数截断尾行 -->
         <div v-if="model.truncatedRows" class="flex h-7 items-center px-3 text-mute">

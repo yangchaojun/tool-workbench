@@ -1,5 +1,7 @@
 <script setup lang="ts">
-import { computed, nextTick, onMounted, watch } from 'vue'
+import { computed, nextTick, onMounted, onUnmounted, ref, watch } from 'vue'
+import { NIcon } from 'naive-ui'
+import { CloseOutline, CopyOutline } from '@vicons/ionicons5'
 import { Position, VueFlow, useVueFlow } from '@vue-flow/core'
 import type { NodeProps } from '@vue-flow/core'
 import { Background } from '@vue-flow/background'
@@ -16,7 +18,7 @@ import { buildGraph, graphNodeId, MAX_GRAPH_NODES } from './buildGraph'
 import type { GraphEntry, GraphNodeModel } from './buildGraph'
 import { layoutGraph, nodeWidth } from './layout'
 import GraphNodeCard from './GraphNodeCard.vue'
-import { getAtPath, isRecord, type JsonPath } from '../editor/mutations'
+import { getAtPath, type JsonPath } from '../editor/mutations'
 
 /**
  * 图谱面板：数据源的容器结构 → 卡片节点图（Vue Flow + dagre 层次布局）。
@@ -85,15 +87,44 @@ function onCardToggle(nodeProps: NodeProps, entry: GraphEntry) {
 const selectedCell = computed(() => {
   const path = selectedCellPath.value
   if (path === null) return null
-  const parent = getAtPath(store.data, path.slice(0, -1))
+  // 父级可为对象或数组（数组节点的行 key 是下标），isRecord 会把数组排除掉
+  const parent = getAtPath(store.data, path.slice(0, -1)) as Record<string, unknown> | null
   const field = path.at(-1) ?? ''
-  if (!isRecord(parent) || !Object.hasOwn(parent, field)) return null
+  if (parent === null || typeof parent !== 'object' || !Object.hasOwn(parent, field)) return null
   const value = parent[field]
+  const text = JSON.stringify(value, null, 2) ?? String(value)
   return {
     field,
     parentPath: path.slice(0, -1),
-    text: JSON.stringify(value, null, 2) ?? String(value),
+    text,
+    // 复制用纯文本：字符串不带引号（与树形视图复制规则一致），其余与展示一致
+    copyText: typeof value === 'string' ? value : text,
   }
+})
+
+// ── 信息栏复制完整值（TreeRow 同款瞬时反馈）─────────────────────
+const copied = ref<'ok' | 'fail' | null>(null)
+let copiedTimer: number | undefined
+
+async function copySelectedValue() {
+  const cell = selectedCell.value
+  if (cell === null) return
+  let ok = false
+  try {
+    await navigator.clipboard.writeText(cell.copyText)
+    ok = true
+  } catch {
+    ok = false
+  }
+  copied.value = ok ? 'ok' : 'fail'
+  window.clearTimeout(copiedTimer)
+  copiedTimer = window.setTimeout(() => {
+    copied.value = null
+  }, 1500)
+}
+
+onUnmounted(() => {
+  window.clearTimeout(copiedTimer)
 })
 
 function selectCell(path: JsonPath | null) {
@@ -153,13 +184,26 @@ onMounted(() => nextTick(() => updateNodeInternals()))
           <span class="min-w-0 flex-1 truncate font-mono text-xs text-muted-foreground" :title="jsonPathLabel(selectedCell.parentPath)">
             {{ jsonPathLabel(selectedCell.parentPath) }}
           </span>
+          <span
+            v-if="copied !== null"
+            class="shrink-0 select-none text-xs"
+            :class="copied === 'ok' ? 'text-accent' : 'text-destructive'"
+          >{{ copied === 'ok' ? '已复制 ✓' : '复制失败' }}</span>
           <button
             type="button"
-            class="shrink-0 rounded px-2 py-1 text-xs text-muted-foreground transition-colors duration-150 hover:bg-muted hover:text-foreground"
+            class="grid size-6 shrink-0 place-items-center rounded text-muted-foreground transition-colors duration-150 hover:bg-muted hover:text-foreground"
+            aria-label="复制完整值"
+            @click="copySelectedValue"
+          >
+            <NIcon :size="14"><CopyOutline /></NIcon>
+          </button>
+          <button
+            type="button"
+            class="grid size-6 shrink-0 place-items-center rounded text-muted-foreground transition-colors duration-150 hover:bg-muted hover:text-foreground"
             aria-label="关闭数据详情"
             @click="selectedCellPath = null"
           >
-            关闭
+            <NIcon :size="14"><CloseOutline /></NIcon>
           </button>
         </div>
         <pre class="min-h-0 overflow-auto whitespace-pre-wrap break-words px-3 py-2 font-mono text-xs leading-5 text-foreground">{{ selectedCell.text }}</pre>
